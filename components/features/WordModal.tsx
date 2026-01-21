@@ -193,38 +193,7 @@ export function WordModal({
           </p>
         </div>
 
-        {/* Synonyms and Antonyms */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {word.synonyms.length > 0 && (
-            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-              <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                Synonyms
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {word.synonyms.map((synonym) => (
-                  <Badge key={synonym} variant="default">
-                    {synonym}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {word.antonyms.length > 0 && (
-            <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-xl">
-              <h3 className="text-sm font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
-                Antonyms
-              </h3>
-              <div className="flex flex-wrap gap-2">
-                {word.antonyms.map((antonym) => (
-                  <Badge key={antonym} variant="default">
-                    {antonym}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">

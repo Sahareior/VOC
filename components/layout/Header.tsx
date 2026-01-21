@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { BookOpen, User, Home, Settings, Menu, X, Sun, Moon, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -17,6 +17,7 @@ export function Header({ onOpenHelp }: HeaderProps) {
   const pathname = usePathname();
   const { theme, toggleTheme } = useTheme();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const router = useRouter()
 
   const navigation = [
     { name: 'Home', href: '/', icon: Home },
@@ -31,7 +32,7 @@ export function Header({ onOpenHelp }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+    <header className="sticky top-0 z-30 w-full bg-white/10 dark:bg-slate-950/30 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -79,25 +80,15 @@ export function Header({ onOpenHelp }: HeaderProps) {
             </div>
 
             {/* Theme toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            >
-              {theme === 'light' ? (
-                <Moon className="w-5 h-5" />
-              ) : (
-                <Sun className="w-5 h-5" />
-              )}
-            </button>
+          
 
             {/* Help button */}
             <button
-              onClick={onOpenHelp}
+              onClick={()=> router.push('/login')}
               className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
               aria-label="Help and voice commands"
             >
-              <HelpCircle className="w-5 h-5" />
+              Login
             </button>
 
             {/* Mobile menu button */}

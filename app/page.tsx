@@ -8,7 +8,7 @@ import { Word } from '@/types';
 import { SAMPLE_WORDS } from '@/lib/data';
 import { useUser } from '@/contexts/UserContext';
 import { VoiceHelpModal } from '@/components/features/VoiceController';
-import Hero from './component/Hero';
+import Hero from './homepage-component/Hero';
 
 export default function HomePage() {
   const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
