@@ -98,7 +98,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
           <Card className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
@@ -127,19 +127,7 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-          <Card className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                <Flame className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                  {stats.currentStreak || 0}
-                </p>
-                <p className="text-sm text-slate-500 dark:text-slate-400">Day Streak</p>
-              </div>
-            </div>
-          </Card>
+
 
           <Card className="p-6">
             <div className="flex items-center gap-4">
@@ -157,47 +145,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Progress Card */}
-        <Card className="mb-8 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
-              Learning Progress
-            </h2>
-            <span className="text-sm text-slate-500 dark:text-slate-400">
-              {learnedWords.length} of {SAMPLE_WORDS.length} words
-            </span>
-          </div>
-          
-          {/* Progress bar */}
-          <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden mb-4">
-            <div
-              className="h-full bg-gradient-to-r from-primary-500 to-accent-500 rounded-full transition-all duration-500"
-              style={{ width: `${progressPercentage}%` }}
-            />
-          </div>
-          
-          {/* Category breakdown */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-            {Object.entries(wordsByCategory).map(([category, count]) => {
-              const config = CATEGORY_CONFIGS[category as WordCategory];
-              return (
-                <div
-                  key={category}
-                  className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 rounded-lg"
-                >
-                  <span className="text-lg">{config.icon}</span>
-                  <div>
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">
-                      {count}
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {config.label}
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+
 
         {/* Tabs */}
         <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700">

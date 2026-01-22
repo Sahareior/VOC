@@ -20,7 +20,7 @@ const Hero = () => {
   }, [stats.learnedCount]);
 
   return (
-    <div className="relative min-h-screen flex items-center overflow-hidden">
+    <div className="relative min-h-screen py-16 flex items-center overflow-hidden">
       {/* Elegant Animated Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-950">
         {/* Subtle Grid */}

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BookOpen, User, Home, Settings, Menu, X, Sun, Moon, HelpCircle } from 'lucide-react';
+import { BookOpen, User, Home, Settings, Menu, X, Sun, Moon, HelpCircle, FileQuestion,squaresExclude, BookDownIcon  } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { VoiceController } from '@/components/features/VoiceController';
@@ -22,6 +22,8 @@ export function Header({ onOpenHelp }: HeaderProps) {
   const navigation = [
     { name: 'Home', href: '/', icon: Home },
     { name: 'Dashboard', href: '/dashboard', icon: User },
+    {name:'Quiz', href: '/quiz', icon:FileQuestion },
+    {name:'Groups', href: '/groups', icon: BookDownIcon  },
   ];
 
   const isActive = (href: string) => {
@@ -46,6 +48,7 @@ export function Header({ onOpenHelp }: HeaderProps) {
                 VocabFlow
               </span>
             </Link>
+
 
             {/* Desktop navigation */}
             <nav className="hidden md:flex items-center gap-1">
@@ -80,7 +83,17 @@ export function Header({ onOpenHelp }: HeaderProps) {
             </div>
 
             {/* Theme toggle */}
-          
+                      <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
+              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            >
+              {theme === 'light' ? (
+                <Moon className="w-5 h-5" />
+              ) : (
+                <Sun className="w-5 h-5" />
+              )}
+            </button>
 
             {/* Help button */}
             <button
