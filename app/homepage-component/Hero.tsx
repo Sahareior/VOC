@@ -1,3 +1,4 @@
+import { useTheme } from '@/contexts/ThemeContext';
 import { useUser } from '@/contexts/UserContext';
 import { SAMPLE_WORDS } from '@/lib/data';
 import { Sparkles, ArrowRight, Zap, Brain, Target } from 'lucide-react';
@@ -6,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 const Hero = () => {
   const { isLearned } = useUser();
   const [isAnimating, setIsAnimating] = useState(false);
-  
+  const { theme } = useTheme();
   const stats = {
     totalWords: SAMPLE_WORDS.length,
     learnedCount: SAMPLE_WORDS.filter(w => isLearned(w.id)).length,
@@ -20,30 +21,34 @@ const Hero = () => {
   }, [stats.learnedCount]);
 
   return (
-    <div className="relative min-h-screen py-16 flex items-center overflow-hidden">
+    <div className={`relative min-h-screen py-16 pb-36 flex items-center overflow-hidden ${theme === 'light' ? 'bg-gradient-to-br from-slate-50 via-purple-50 to-slate-100' : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-950'}`}>
       {/* Elegant Animated Background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-950">
+      <div className={`absolute inset-0 ${theme === 'light' ? 'bg-gradient-to-br from-slate-50 via-purple-50 to-slate-100' : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-950'}`}>
         {/* Subtle Grid */}
         <div 
-          className="absolute inset-0 opacity-10"
+          className="absolute inset-0"
           style={{
-            backgroundImage: `linear-gradient(to right, #ffffff22 1px, transparent 1px),
-                              linear-gradient(to bottom, #ffffff22 1px, transparent 1px)`,
+            backgroundImage: theme === 'light' 
+              ? `linear-gradient(to right, #00000011 1px, transparent 1px),
+                 linear-gradient(to bottom, #00000011 1px, transparent 1px)`
+              : `linear-gradient(to right, #ffffff22 1px, transparent 1px),
+                 linear-gradient(to bottom, #ffffff22 1px, transparent 1px)`,
             backgroundSize: '80px 80px',
+            opacity: theme === 'light' ? 0.2 : 0.1,
           }}
         />
         
         {/* Floating Abstract Shapes */}
-        <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-r from-purple-600/20 to-pink-600/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-r from-blue-600/10 to-cyan-600/10 rounded-full blur-3xl animate-pulse delay-1000" />
-        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-gradient-to-r from-violet-600/15 to-purple-600/15 rounded-full blur-3xl animate-pulse delay-500" />
+        <div className={`absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl animate-pulse ${theme === 'light' ? 'bg-gradient-to-r from-purple-400/20 to-pink-400/20' : 'bg-gradient-to-r from-purple-600/20 to-pink-600/20'}`} />
+        <div className={`absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl animate-pulse delay-1000 ${theme === 'light' ? 'bg-gradient-to-r from-blue-400/10 to-cyan-400/10' : 'bg-gradient-to-r from-blue-600/10 to-cyan-600/10'}`} />
+        <div className={`absolute top-1/2 left-1/3 w-64 h-64 rounded-full blur-3xl animate-pulse delay-500 ${theme === 'light' ? 'bg-gradient-to-r from-violet-400/15 to-purple-400/15' : 'bg-gradient-to-r from-violet-600/15 to-purple-600/15'}`} />
         
         {/* Animated Particles */}
         <div className="absolute inset-0">
           {Array.from({ length: 30 }).map((_, i) => (
             <div
               key={i}
-              className="absolute w-[1px] h-[1px] bg-white rounded-full animate-float"
+              className={`absolute w-[1px] h-[1px] rounded-full animate-float ${theme === 'light' ? 'bg-gray-800/30' : 'bg-white/30'}`}
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -59,103 +64,115 @@ const Hero = () => {
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center">
           {/* Elegant Badge */}
-          <div className="inline-flex items-center gap-2 px-6 py-3 bg-white/5 backdrop-blur-lg rounded-full border border-white/10 mb-8 group hover:bg-white/10 transition-all duration-500 cursor-pointer">
-            <Sparkles className="w-4 h-4 text-purple-300 animate-pulse" />
-            <span className="text-sm font-medium text-white/80 tracking-wide">
+          <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full border backdrop-blur-lg mb-8 group hover:transition-all duration-500 cursor-pointer ${
+            theme === 'light' 
+              ? 'bg-white/80 border-gray-200 hover:bg-white hover:border-gray-300' 
+              : 'bg-white/5 border-white/10 hover:bg-white/10'
+          }`}>
+            <Sparkles className={`w-4 h-4 animate-pulse ${theme === 'light' ? 'text-purple-500' : 'text-purple-300'}`} />
+            <span className={`text-sm font-medium tracking-wide ${theme === 'light' ? 'text-gray-700' : 'text-white/80'}`}>
               AI-Powered Learning Platform
             </span>
-            <div className="w-px h-3 bg-white/20 mx-2" />
-            <span className="text-xs text-white/60 group-hover:text-white/80 transition-colors">
+            <div className={`w-px h-3 mx-2 ${theme === 'light' ? 'bg-gray-300' : 'bg-white/20'}`} />
+            <span className={`text-xs transition-colors ${theme === 'light' ? 'text-gray-500 group-hover:text-gray-700' : 'text-white/60 group-hover:text-white/80'}`}>
               Join 10,000+ learners
             </span>
           </div>
 
           {/* Main Title */}
           <div className="relative mb-10">
-            <h1 className="text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-white mb-6 leading-tight tracking-tight">
+            <h1 className={`text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 leading-tight tracking-tight ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
               Master Vocabulary
               <span className="block mt-2">
                 <span className="relative">
-                  <span className="relative z-10 bg-gradient-to-r from-cyan-300 via-purple-300 to-pink-300 bg-clip-text text-transparent animate-gradient-x">
+                  <span className="relative z-10 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient-x">
                     Effortlessly
                   </span>
-                  <div className="absolute -bottom-2 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent animate-pulse" />
+                  <div className={`absolute -bottom-2 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent animate-pulse ${
+                    theme === 'light' ? 'via-cyan-500/70' : 'via-cyan-400/50'
+                  }`} />
                 </span>
               </span>
             </h1>
             
             {/* Title Decoration */}
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl">
-              <div className="absolute left-0 top-0 w-32 h-32 bg-gradient-to-r from-purple-600/10 to-transparent rounded-full blur-xl" />
-              <div className="absolute right-0 bottom-0 w-32 h-32 bg-gradient-to-l from-cyan-600/10 to-transparent rounded-full blur-xl" />
+              <div className={`absolute left-0 top-0 w-32 h-32 rounded-full blur-xl ${
+                theme === 'light' 
+                  ? 'bg-gradient-to-r from-purple-400/10 to-transparent' 
+                  : 'bg-gradient-to-r from-purple-600/10 to-transparent'
+              }`} />
+              <div className={`absolute right-0 bottom-0 w-32 h-32 rounded-full blur-xl ${
+                theme === 'light'
+                  ? 'bg-gradient-to-l from-cyan-400/10 to-transparent'
+                  : 'bg-gradient-to-l from-cyan-600/10 to-transparent'
+              }`} />
             </div>
           </div>
 
           {/* Elegant Subtitle */}
-          <p className="text-lg sm:text-xl lg:text-2xl text-white/70 max-w-2xl mx-auto mb-12 leading-relaxed font-light tracking-wide">
+          <p className={`text-lg sm:text-xl lg:text-2xl max-w-2xl mx-auto mb-12 leading-relaxed font-light tracking-wide ${
+            theme === 'light' ? 'text-gray-600' : 'text-white/70'
+          }`}>
             Discover words through immersive learning, receive{' '}
             <span className="relative">
-              <span className="text-white font-medium">
+              <span className={`font-medium ${theme === 'light' ? 'text-gray-800' : 'text-white'}`}>
                 intelligent explanations
               </span>
-              <span className="absolute -bottom-1 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-400/50 to-transparent" />
+              <span className={`absolute -bottom-1 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent ${
+                theme === 'light' ? 'via-cyan-500/70' : 'via-cyan-400/50'
+              }`} />
             </span>
             , and accelerate your progress with personalized guidance.
           </p>
 
           {/* CTA Buttons - Elegant Design */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-            {/* Primary Button */}
-            <button className="group relative px-10 py-4 rounded-xl overflow-hidden">
-              {/* Animated Gradient Background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/20 via-purple-500/20 to-pink-500/20 animate-gradient-x" />
-              
-              {/* Solid Background */}
-              <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-purple-600 opacity-90 group-hover:opacity-100 transition-opacity duration-500" />
-              
-              {/* Shine Effect */}
-              <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                <div className="absolute -inset-full bg-gradient-to-r from-transparent via-white/30 to-transparent group-hover:animate-shimmer" />
-              </div>
-              
-              {/* Border Glow */}
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 rounded-xl blur opacity-0 group-hover:opacity-70 transition-opacity duration-500" />
-              
-              {/* Content */}
-              <div className="relative flex items-center justify-center gap-3 text-white font-semibold tracking-wide">
-                <Zap className="w-5 h-5 group-hover:rotate-12 transition-transform duration-300" />
-                Start Free Trial
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-              </div>
-            </button>
-
             {/* Secondary Button */}
-            <button className="group px-10 py-4 bg-transparent text-white font-semibold tracking-wide rounded-xl border border-white/20 hover:border-white/40 transition-all duration-500 backdrop-blur-sm hover:bg-white/5">
+            <button className={`group px-10 py-4 bg-transparent font-semibold tracking-wide rounded-xl border transition-all duration-500 backdrop-blur-sm ${
+              theme === 'light'
+                ? 'text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50/50'
+                : 'text-white border-white/20 hover:border-white/40 hover:bg-white/5'
+            }`}>
               <div className="flex items-center justify-center gap-3">
-                <Brain className="w-5 h-5 group-hover:scale-110 transition-transform duration-300" />
+                <Brain className={`w-5 h-5 group-hover:scale-110 transition-transform duration-300 ${
+                  theme === 'light' ? 'text-gray-700' : 'text-white'
+                }`} />
                 <span className="relative">
                   See How It Works
-                  <span className="absolute -bottom-1 left-0 right-0 h-[1px] bg-white/20 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left" />
+                  <span className={`absolute -bottom-1 left-0 right-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left ${
+                    theme === 'light' ? 'bg-gray-400' : 'bg-white/20'
+                  }`} />
                 </span>
               </div>
             </button>
           </div>
 
           {/* Feature Highlights - Minimal */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {[
-              { icon: Sparkles, text: 'AI-Powered Insights', color: 'text-cyan-300' },
-              { icon: Target, text: 'Personalized Goals', color: 'text-purple-300' },
-              { icon: Brain, text: 'Smart Learning', color: 'text-pink-300' },
+              { icon: Sparkles, text: 'AI-Powered Insights', color: 'text-cyan-500' },
+              { icon: Target, text: 'Personalized Goals', color: 'text-purple-500' },
+              { icon: Brain, text: 'Smart Learning', color: 'text-pink-500' },
             ].map((feature, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 p-4 rounded-lg bg-white/5 backdrop-blur-sm border border-white/5 hover:border-white/10 transition-all duration-500 group"
+                className={`flex items-center gap-3 p-4 rounded-lg backdrop-blur-sm border transition-all duration-500 group ${
+                  theme === 'light'
+                    ? 'bg-white/50 border-gray-200 hover:border-gray-300 hover:bg-white/70'
+                    : 'bg-white/5 border-white/5 hover:border-white/10'
+                }`}
               >
-                <div className={`p-2 rounded-lg bg-white/5 group-hover:bg-white/10 transition-colors ${feature.color}`}>
+                <div className={`p-2 rounded-lg transition-colors group-hover:bg-opacity-20 ${feature.color} ${
+                  theme === 'light' 
+                    ? 'bg-gray-100 group-hover:bg-gray-200' 
+                    : 'bg-white/5 group-hover:bg-white/10'
+                }`}>
                   <feature.icon className="w-5 h-5" />
                 </div>
-                <span className="text-sm text-white/70 font-medium tracking-wide">
+                <span className={`text-sm font-medium tracking-wide ${
+                  theme === 'light' ? 'text-gray-700' : 'text-white/70'
+                }`}>
                   {feature.text}
                 </span>
               </div>
@@ -165,10 +182,18 @@ const Hero = () => {
       </div>
 
       {/* Scroll Indicator */}
-      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
+      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
         <div className="flex flex-col items-center gap-2">
-          <span className="text-xs text-white/40 tracking-widest font-medium">EXPLORE</span>
-          <div className="w-px h-8 bg-gradient-to-b from-white/40 to-transparent animate-bounce" />
+          <span className={`text-xs tracking-widest font-medium ${
+            theme === 'light' ? 'text-gray-400' : 'text-white/40'
+          }`}>
+            EXPLORE
+          </span>
+          <div className={`w-px h-8 bg-gradient-to-b animate-bounce ${
+            theme === 'light' 
+              ? 'from-gray-400 to-transparent' 
+              : 'from-white/40 to-transparent'
+          }`} />
         </div>
       </div>
 

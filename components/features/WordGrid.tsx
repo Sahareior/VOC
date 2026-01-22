@@ -135,14 +135,14 @@ export function WordGrid({ words, onOpenModal }: WordGridProps) {
       {/* Search + Sort */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         {/* Search */}
-        <div className="relative flex-1">
+        <div className="relative w-full flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           <input
             type="text"
             placeholder="Search words, definitions, or synonyms..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-[50%] pl-10 pr-10 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="md:w-[50%] w-full pl-10 pr-10 px-6 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
           />
           {searchQuery && (
             <button
@@ -155,33 +155,11 @@ export function WordGrid({ words, onOpenModal }: WordGridProps) {
         </div>
 
         {/* Sort buttons */}
-        <div className="flex gap-2">
-          {(['random', 'az', 'newest'] as SortMode[]).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => setSortMode(mode)}
-              className={cn(
-                'px-4 py-1.5 rounded-full text-sm font-medium transition',
-                sortMode === mode
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-orange-100 text-orange-600 hover:bg-orange-200'
-              )}
-            >
-              {mode === 'random' && 'Random'}
-              {mode === 'az' && 'A–Z'}
-              {mode === 'newest' && 'Newest'}
-            </button>
-          ))}
-        </div>
+      
       </div>
 
       {/* Results count */}
-      <div className="text-sm text-slate-500 dark:text-slate-400">
-        Showing {startIndex + 1}-{Math.min(endIndex, filteredWords.length)} of {filteredWords.length} words
-        <span className="ml-2 text-orange-500">
-          Sorted by {sortMode.toUpperCase()}
-        </span>
-      </div>
+      
 
       {/* Word grid */}
       {currentWords.length > 0 ? (

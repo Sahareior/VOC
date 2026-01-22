@@ -5,8 +5,10 @@ import { UserProvider } from '@/contexts/UserContext';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { VoiceProvider } from '@/contexts/VoiceContext';
 import { Header } from '@/components/layout/Header';
-import { AIChatWidget } from '@/components/features/AIChatWidget';
+
 import { useState } from 'react';
+import VoiceCommand from '@/components/features/VoiceCommand';
+import Footer from './homepage-component/Footer';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -60,7 +62,8 @@ export default function RootLayout({
                 <main className="flex-1">
                   {children}
                 </main>
-                <AIChatWidget />
+                <VoiceCommand />
+                <Footer />
               </div>
             </VoiceProvider>
           </UserProvider>

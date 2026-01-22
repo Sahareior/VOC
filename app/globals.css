@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+Source - https://stackoverflow.com/a
+Posted by Anirban Bhui, modified by community. See post 'Timeline' for change history
+Retrieved 2026-01-22, License - CC BY-SA 4.0
+*/
+
+
+
+
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -190,4 +200,9 @@
 
 .animate-float {
   animation: float linear infinite;
+}
+
+
+.example::-webkit-scrollbar {
+  display: none;
 }

@@ -78,9 +78,9 @@ export function Header({ onOpenHelp }: HeaderProps) {
           {/* Right side actions */}
           <div className="flex items-center gap-2">
             {/* Voice controller */}
-            <div className="hidden sm:block">
+            {/* <div className="hidden sm:block">
               <VoiceController />
-            </div>
+            </div> */}
 
             {/* Theme toggle */}
                       <button
@@ -147,14 +147,14 @@ export function Header({ onOpenHelp }: HeaderProps) {
             })}
 
             {/* Mobile voice controller */}
-            <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+            {/* <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
               <p className="px-4 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                 Voice Commands
               </p>
               <div className="px-4">
                 <VoiceController />
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       )}

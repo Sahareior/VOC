@@ -3,6 +3,8 @@ export type WordCategory = 'noun' | 'verb' | 'adjective' | 'adverb' | 'prepositi
 
 export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 
+export type SortType = 'random' | 'az' | 'newest' | 'difficulty';
+
 export interface Word {
   id: string;
   term: string;
@@ -54,6 +56,8 @@ export interface VoiceState {
   transcript: string;
   error: string | null;
   lastCommand: string | null;
+  openWordModal: (word: Word) => void;
+  sortWords: (sortType: SortType) => void;
 }
 
 // Voice command mappings

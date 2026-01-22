@@ -1,10 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
-import { VoiceState, VoiceCommand } from '@/types';
+import { VoiceState, VoiceCommand, Word, SortType } from '@/types';
 import { isSpeechRecognitionSupported, storage } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { delay } from '@/lib/utils';
+import { SAMPLE_WORDS } from '@/lib/data';
 
 const STORAGE_KEY = 'vocabflow-voice-enabled';
 
@@ -15,6 +15,10 @@ const INITIAL_STATE: VoiceState = {
   error: null,
   lastCommand: null,
 };
+
+// Create dynamic patterns for all words
+const wordNames = SAMPLE_WORDS.map(w => w.term.toLowerCase());
+const wordPattern = new RegExp(`^(open|show)\\s+(${wordNames.join('|')})$`, 'i');
 
 // Voice command definitions with regex patterns
 const VOICE_COMMANDS: VoiceCommand[] = [
@@ -83,6 +87,53 @@ const VOICE_COMMANDS: VoiceCommand[] = [
     action: 'toggle-theme',
     description: 'Toggle dark mode',
   },
+  // New commands for opening specific words
+  {
+    patterns: [wordPattern],
+    action: 'open-word',
+    description: 'Open word modal by name',
+  },
+  {
+    patterns: [/^open\s+(.+)$/i], // More flexible pattern
+    action: 'open-word-flexible',
+    description: 'Open word modal by name (flexible)',
+  },
+  {
+    patterns: [/^show\s+(.+)$/i],
+    action: 'open-word-flexible',
+    description: 'Show word modal by name',
+  },
+  // New commands for sorting
+  {
+    patterns: [/^sort\s+(by\s+)?random$/i, /^shuffle$/i],
+    action: 'sort-random',
+    description: 'Sort words randomly',
+  },
+  {
+    patterns: [/^sort\s+(by\s+)?alphabetical$/i, /^sort\s+a(\s+)?to\s+z$/i, /^sort\s+az$/i],
+    action: 'sort-az',
+    description: 'Sort words A-Z',
+  },
+  {
+    patterns: [/^sort\s+(by\s+)?newest$/i, /^sort\s+by\s+date$/i],
+    action: 'sort-newest',
+    description: 'Sort by newest words',
+  },
+  {
+    patterns: [/^sort\s+(by\s+)?difficulty$/i],
+    action: 'sort-difficulty',
+    description: 'Sort by word difficulty',
+  },
+  {
+    patterns: [/^sort\s+(by\s+)?learned$/i, /^show\s+learned$/i],
+    action: 'filter-learned',
+    description: 'Filter by learned words',
+  },
+  {
+    patterns: [/^sort\s+(by\s+)?favorites$/i, /^show\s+favorites$/i],
+    action: 'filter-favorites',
+    description: 'Filter by favorite words',
+  },
 ];
 
 interface VoiceContextType extends VoiceState {
@@ -93,6 +144,8 @@ interface VoiceContextType extends VoiceState {
   toggleVoiceEnabled: () => void;
   lastCommandDescription: string | null;
   executeCommand: (command: string) => void;
+  openWordModal: (word: Word) => void;
+  sortWords: (sortType: SortType) => void;
 }
 
 const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
@@ -190,6 +243,52 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
         }
       }
     }
+    
+    // If no command matched, try to handle as "open [word]" flexibly
+    if (transcript.startsWith('open ') || transcript.startsWith('show ')) {
+      setState((prev) => ({ ...prev, lastCommand: transcript }));
+      setLastCommandDescription('Try to open word by name');
+      executeCommand('open-word-flexible', transcript);
+    }
+  }, []);
+
+  // Speak text using speech synthesis
+  const speak = useCallback((text: string) => {
+    if (!synthesisRef.current || !isVoiceEnabled) return;
+    
+    // Cancel any ongoing speech
+    synthesisRef.current.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.9;
+    utterance.pitch = 1;
+    utterance.volume = 1;
+    
+    synthesisRef.current.speak(utterance);
+  }, [isVoiceEnabled]);
+
+  // Find word by name (with fuzzy matching)
+  const findWordByName = useCallback((wordName: string): Word | null => {
+    const cleanWordName = wordName.toLowerCase().trim();
+    
+    // 1. Exact match
+    let word = SAMPLE_WORDS.find(w => 
+      w.term.toLowerCase() === cleanWordName
+    );
+    
+    if (word) return word;
+    
+    // 2. Contains match
+    word = SAMPLE_WORDS.find(w => 
+      cleanWordName.includes(w.term.toLowerCase()) || 
+      w.term.toLowerCase().includes(cleanWordName)
+    );
+    
+    if (word) return word;
+    
+    // 3. Soundex or fuzzy matching could be added here
+    // For now, return null if no match found
+    return null;
   }, []);
 
   // Execute a recognized command
@@ -197,53 +296,136 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     switch (action) {
       case '/':
         router.push('/');
+        speak('Navigating to home');
         break;
       case '/dashboard':
         router.push('/dashboard');
+        speak('Navigating to dashboard');
         break;
       case 'next-card':
-        // Dispatch custom event for next card navigation
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'next' } }));
+        speak('Moving to next card');
         break;
       case 'previous-card':
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'previous' } }));
+        speak('Moving to previous card');
         break;
       case 'open-card':
-        // Extract card number from transcript
         if (transcript) {
           const match = transcript.match(/(\d+)/);
           if (match) {
-            window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'open', index: parseInt(match[1]) - 1 } }));
+            const index = parseInt(match[1]) - 1;
+            window.dispatchEvent(new CustomEvent('voice-command', { 
+              detail: { command: 'open-card', index } 
+            }));
+            speak(`Opening card ${match[1]}`);
           }
         }
         break;
       case 'explain-word':
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'explain' } }));
+        speak('Explaining current word');
         break;
       case 'save-word':
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'save' } }));
+        speak('Saving current word');
         break;
       case 'read-word':
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'read' } }));
+        speak('Reading word aloud');
         break;
       case 'search':
-        // Handle search command - would require search context
-        window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'search', query: transcript?.replace(/^(search|find)\s+for\s+/i, '') } }));
+        if (transcript) {
+          const searchQuery = transcript.replace(/^(search|find)\s+for\s+/i, '');
+          window.dispatchEvent(new CustomEvent('voice-command', { 
+            detail: { command: 'search', query: searchQuery } 
+          }));
+          speak(`Searching for ${searchQuery}`);
+        }
         break;
       case 'scroll-down':
-        window.scrollBy({ top: 300, behavior: 'smooth' });
+        window.scrollBy({ top: 600, behavior: 'smooth' });
+        speak('Scrolling down');
         break;
       case 'scroll-up':
-        window.scrollBy({ top: -300, behavior: 'smooth' });
+        window.scrollBy({ top: -600, behavior: 'smooth' });
+        speak('Scrolling up');
         break;
       case 'close':
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'close' } }));
+        speak('Closing modal');
         break;
       case 'toggle-theme':
         window.dispatchEvent(new CustomEvent('voice-command', { detail: { command: 'toggle-theme' } }));
+        speak('Toggling theme');
+        break;
+        
+      // New commands for opening words
+      case 'open-word':
+      case 'open-word-flexible':
+        if (transcript) {
+          // Extract word name from transcript
+          const wordName = transcript.toLowerCase().replace(/^(open|show)\s+/i, '').trim();
+          const word = findWordByName(wordName);
+          
+          if (word) {
+            window.dispatchEvent(new CustomEvent('voice-command', { 
+              detail: { 
+                command: 'open-word', 
+                word 
+              } 
+            }));
+            speak(`Opening ${word.term}`);
+          } else {
+            speak(`Sorry, I couldn't find the word "${wordName}"`);
+          }
+        }
+        break;
+        
+      // New commands for sorting
+      case 'sort-random':
+        window.dispatchEvent(new CustomEvent('voice-command', { 
+          detail: { command: 'sort', sortType: 'random' } 
+        }));
+        speak('Sorting randomly');
+        break;
+        
+      case 'sort-az':
+        window.dispatchEvent(new CustomEvent('voice-command', { 
+          detail: { command: 'sort', sortType: 'az' } 
+        }));
+        speak('Sorting A to Z');
+        break;
+        
+      case 'sort-newest':
+        window.dispatchEvent(new CustomEvent('voice-command', { 
+          detail: { command: 'sort', sortType: 'newest' } 
+        }));
+        speak('Sorting by newest');
+        break;
+        
+      case 'sort-difficulty':
+        window.dispatchEvent(new CustomEvent('voice-command', { 
+          detail: { command: 'sort', sortType: 'difficulty' } 
+        }));
+        speak('Sorting by difficulty');
+        break;
+        
+      case 'filter-learned':
+        window.dispatchEvent(new CustomEvent('voice-command', { 
+          detail: { command: 'filter', filterType: 'learned' } 
+        }));
+        speak('Showing learned words');
+        break;
+        
+      case 'filter-favorites':
+        window.dispatchEvent(new CustomEvent('voice-command', { 
+          detail: { command: 'filter', filterType: 'favorites' } 
+        }));
+        speak('Showing favorite words');
         break;
     }
-  }, [router]);
+  }, [router, speak, findWordByName]);
 
   // Start listening for voice commands
   const startListening = useCallback(() => {
@@ -267,29 +449,26 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Speak text using speech synthesis
-  const speak = useCallback(async (text: string) => {
-    if (!synthesisRef.current) return;
-    
-    // Cancel any ongoing speech
-    synthesisRef.current.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 1;
-    
-    synthesisRef.current.speak(utterance);
-  }, []);
-
   // Toggle voice feature on/off
   const toggleVoiceEnabled = useCallback(() => {
     setIsVoiceEnabled((prev) => {
       const newValue = !prev;
       storage.set(STORAGE_KEY, newValue);
+      
+      if (newValue) {
+        speak('Voice commands enabled');
+      } else {
+        speak('Voice commands disabled');
+        stopListening();
+      }
+      
       return newValue;
     });
-  }, []);
+  }, [speak, stopListening]);
+
+
+
+
 
   const value: VoiceContextType = {
     ...state,
@@ -299,7 +478,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     isVoiceEnabled,
     toggleVoiceEnabled,
     lastCommandDescription,
-    executeCommand,
+    executeCommand
   };
 
   return <VoiceContext.Provider value={value}>{children}</VoiceContext.Provider>;

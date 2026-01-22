@@ -98,7 +98,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
           <Card className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
@@ -148,7 +148,7 @@ export default function DashboardPage() {
 
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700">
+        <div className="flex gap-2 justify-between md:justify-start mb-6 border-b border-slate-200 dark:border-slate-700">
           <button
             onClick={() => setActiveTab('learned')}
             className={cn(

@@ -90,22 +90,7 @@ export function WordCard({
 
           {/* Premium badges */}
           <div className="absolute top-4 left-4 flex flex-col gap-2">
-            <Badge
-              variant="default"
-              className={cn(
-                'glass-effect backdrop-blur-md border-white/20 px-3 py-1.5',
-                'font-medium tracking-wide text-xs uppercase',
-                'transition-all duration-300 transform-gpu',
-                'group-hover:scale-105',
-                categoryConfig.color
-              )}
-              style={{
-                transform: isHovered ? 'translateZ(10px)' : 'none',
-              }}
-            >
-              <span className="mr-1.5">{categoryConfig.icon}</span>
-              {categoryConfig.label}
-            </Badge>
+         
           </div>
 
           {/* Floating action buttons */}
