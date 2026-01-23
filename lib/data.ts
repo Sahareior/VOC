@@ -12,6 +12,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1490750967868-88aa4486c946?w=400&h=300&fit=crop',
     synonyms: ['fleeting', 'transient', 'momentary', 'brief'],
     antonyms: ['permanent', 'eternal', 'lasting', 'enduring'],
+    createdAt:'2'
   },
   {
     id: '2',
@@ -24,6 +25,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1465101162946-4377e57745c3?w=400&h=300&fit=crop',
     synonyms: ['chance', 'fortune', 'luck', 'providence'],
     antonyms: ['design', 'planning', 'intention'],
+     createdAt:'2'
   },
   {
     id: '3',
@@ -36,6 +38,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=300&fit=crop',
     synonyms: ['omnipresent', 'everywhere', 'pervasive', 'universal'],
     antonyms: ['rare', 'scarce', 'uncommon', 'unique'],
+     createdAt:'2'
   },
   {
     id: '4',
@@ -48,6 +51,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1475721027785-f74eccf877e2?w=400&h=300&fit=crop',
     synonyms: ['articulate', 'expressive', 'fluent', 'silver-tongued'],
     antonyms: ['inarticulate', 'halting', 'tongue-tied'],
+     createdAt:'2'
   },
   {
     id: '5',
@@ -60,6 +64,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1507838153414-b4b713384a76?w=400&h=300&fit=crop',
     synonyms: ['melodious', 'dulcet', 'honeyed', 'sweet'],
     antonyms: ['harsh', 'grating', 'cacophonous'],
+     createdAt:'2'
   },
   {
     id: '6',
@@ -72,6 +77,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
     synonyms: ['adaptability', 'flexibility', 'strength', 'tenacity'],
     antonyms: ['fragility', 'weakness', 'vulnerability'],
+     createdAt:'2'
   },
   {
     id: '7',
@@ -84,6 +90,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=300&fit=crop',
     synonyms: ['indescribable', 'unspeakable', 'inexpressible', 'unutterable'],
     antonyms: ['expressible', ' describable', 'utterable'],
+     createdAt:'2'
   },
   {
     id: '8',
@@ -96,6 +103,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=400&h=300&fit=crop',
     synonyms: ['practical', 'realistic', 'sensible', 'down-to-earth'],
     antonyms: ['idealistic', 'theoretical', 'impractical'],
+     createdAt:'2'
   },
   {
     id: '9',
@@ -108,6 +116,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1485470733090-0aae1788d5af?w=400&h=300&fit=crop',
     synonyms: ['discord', 'dissonance', 'noise', 'racket'],
     antonyms: ['harmony', 'melody', 'euphony'],
+     createdAt:'2'
   },
   {
     id: '10',
@@ -120,6 +129,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1499209974431-9dddcece7f88?w=400&h=300&fit=crop',
     synonyms: ['optimistic', 'hopeful', 'confident', 'buoyant'],
     antonyms: ['pessimistic', 'gloomy', 'despondent'],
+     createdAt:'2'
   },
   {
     id: '11',
@@ -132,6 +142,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=400&h=300&fit=crop',
     synonyms: ['determination', ' persistence', 'tenacity', 'resolve'],
     antonyms: ['giving up', 'surrender', 'defeatism'],
+     createdAt:'2'
   },
   {
     id: '12',
@@ -144,6 +155,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1456324504439-367cee3853b5?w=400&h=300&fit=crop',
     synonyms: ['precise', 'exact', 'scrupulous', 'painstaking'],
     antonyms: ['careless', 'sloppy', 'haphazard'],
+     createdAt:'2'
   },
   {
     id: '13',
@@ -156,6 +168,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop',
     synonyms: ['uncertain', 'undecided', 'conflicted', 'hesitant'],
     antonyms: ['certain', 'decided', 'resolute'],
+     createdAt:'2'
   },
   {
     id: '14',
@@ -168,6 +181,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=400&h=300&fit=crop',
     synonyms: ['diverse', 'varied', 'mixed', 'ecumenical'],
     antonyms: ['uniform', 'homogeneous', 'limited'],
+     createdAt:'2'
   },
   {
     id: '15',
@@ -180,6 +194,7 @@ export const SAMPLE_WORDS: Word[] = [
     imageUrl: 'https://images.unsplash.com/photo-1533563906091-fdfdcdba0531?w=400&h=300&fit=crop',
     synonyms: ['persistence', 'determination', 'resolve', 'grit'],
     antonyms: ['weakness', 'submission', 'capitulation'],
+     createdAt:'2'
   },
 ];
 

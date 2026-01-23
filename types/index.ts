@@ -16,6 +16,7 @@ export interface Word {
   imageUrl: string;
   synonyms: string[];
   antonyms: string[];
+  createdAt: string
 }
 
 // User progress types
@@ -56,8 +57,8 @@ export interface VoiceState {
   transcript: string;
   error: string | null;
   lastCommand: string | null;
-  openWordModal: (word: Word) => void;
-  sortWords: (sortType: SortType) => void;
+  openWordModal?: (word: Word) => void;
+  sortWords?: (sortType: SortType) => void;
 }
 
 // Voice command mappings

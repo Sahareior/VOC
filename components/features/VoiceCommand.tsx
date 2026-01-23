@@ -1,13 +1,14 @@
 'use client'
 
 import { useVoice } from '@/contexts/VoiceContext';
-import { Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, AlertCircle, CheckCircle } from 'lucide-react';
 import React, { useCallback, useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 const VoiceCommand = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isRippling, setIsRippling] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(true);
   const {
     isListening,
     isSupported,
@@ -20,6 +21,15 @@ const VoiceCommand = () => {
     toggleVoiceEnabled,
     lastCommandDescription,
   } = useVoice();
+
+  // Auto-hide feedback messages after a delay
+  useEffect(() => {
+    if (transcript || error || lastCommandDescription) {
+      setShowFeedback(true);
+      const timer = setTimeout(() => setShowFeedback(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [transcript, error, lastCommandDescription]);
 
   // Handle ripple effect when listening starts/stops
   useEffect(() => {
@@ -99,28 +109,40 @@ const VoiceCommand = () => {
       </div>
 
       {/* Transcript/Command display */}
-      {(transcript || lastCommandDescription) && (
-        <div className="max-w-xs p-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-          {transcript && (
-            <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-              <span className="font-semibold">You said:</span> {transcript}
-            </p>
+      {showFeedback && (transcript || lastCommandDescription || error) && (
+        <div className="max-w-xs space-y-3">
+          {error && (
+            <div className="p-4 bg-red-50 dark:bg-red-900/30 rounded-lg shadow-lg border border-red-200 dark:border-red-800 animate-in fade-in slide-in-from-top">
+              <p className="text-sm text-red-600 dark:text-red-400 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span><span className="font-semibold">Error:</span> {error}</span>
+              </p>
+            </div>
           )}
+          
+          {transcript && (
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/30 rounded-lg shadow-lg border border-blue-200 dark:border-blue-800 animate-in fade-in slide-in-from-top">
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                <span className="font-semibold">You said:</span> "{transcript}"
+              </p>
+            </div>
+          )}
+
           {lastCommandDescription && (
-            <p className="text-sm text-green-600 dark:text-green-400">
-              <span className="font-semibold">Executed:</span>{' '}
-              {lastCommandDescription}
-            </p>
+            <div className="p-4 bg-green-50 dark:bg-green-900/30 rounded-lg shadow-lg border border-green-200 dark:border-green-800 animate-in fade-in slide-in-from-top">
+              <p className="text-sm text-green-600 dark:text-green-400 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 flex-shrink-0" />
+                <span><span className="font-semibold">Executed:</span> {lastCommandDescription}</span>
+              </p>
+            </div>
           )}
         </div>
       )}
 
-      {/* Error display */}
-      {error && (
-        <div className="max-w-xs p-4 bg-red-50 dark:bg-red-900/30 rounded-lg shadow-lg">
-          <p className="text-sm text-red-600 dark:text-red-400">
-            <span className="font-semibold">Error:</span> {error}
-          </p>
+      {/* Listening hint */}
+      {isListening && (
+        <div className="max-w-xs p-3 bg-blue-500 text-white rounded-lg shadow-lg text-sm text-center font-medium animate-pulse">
+          Listening... Speak now
         </div>
       )}
     </div>

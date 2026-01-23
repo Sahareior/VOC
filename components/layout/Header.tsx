@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BookOpen, User, Home, Settings, Menu, X, Sun, Moon, HelpCircle, FileQuestion,squaresExclude, BookDownIcon  } from 'lucide-react';
+import { BookOpen, User, Home, Settings, Menu, X, Sun, Moon, HelpCircle, FileQuestion, BookDownIcon  } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '@/contexts/ThemeContext';
 import { VoiceController } from '@/components/features/VoiceController';

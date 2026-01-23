@@ -64,7 +64,7 @@ export function WordModal({
         case 'read':
           speak(word.term);
           break;
-        case 'save':
+        case 'finish':
           toggleLearnedState(word.id);
           break;
         case 'close':
