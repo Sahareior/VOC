@@ -166,6 +166,7 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
   // Refs for tracking state
   const restartTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const listeningStateRef = useRef<boolean>(false); // Track if user wants to listen
   const SILENCE_TIMEOUT = 5000; // Restart after 5 seconds of silence
   const CONFIDENCE_THRESHOLD = 0.3; // Only accept results with at least 30% confidence
 
@@ -270,18 +271,45 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       
       setState((prev) => ({
         ...prev,
-        isListening: false,
         error: errorMessage,
       }));
+      
+      // On mobile, restart listening if user is still listening
+      // This prevents the mic from stopping on mobile devices
+      if (listeningStateRef.current && isVoiceEnabled && recognitionRef.current) {
+        restartTimeoutRef.current = setTimeout(() => {
+          if (listeningStateRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch (error) {
+              console.error('Failed to restart after error:', error);
+            }
+          }
+        }, 500);
+      }
     };
 
     recognition.onend = () => {
-      setState((prev) => ({
-        ...prev,
-        isListening: false,
-      }));
-      
       clearTimeouts();
+      
+      // On mobile, the recognition can stop unexpectedly
+      // If user is still listening, restart it
+      if (listeningStateRef.current && isVoiceEnabled && recognitionRef.current) {
+        try {
+          restartTimeoutRef.current = setTimeout(() => {
+            if (listeningStateRef.current && recognitionRef.current) {
+              recognitionRef.current.start();
+            }
+          }, 100);
+        } catch (error) {
+          console.error('Failed to restart recognition:', error);
+        }
+      } else {
+        setState((prev) => ({
+          ...prev,
+          isListening: false,
+        }));
+      }
     };
 
     return () => {
@@ -499,6 +527,8 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
       if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
       if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
       
+      // Mark that user wants to listen
+      listeningStateRef.current = true;
       recognitionRef.current.start();
     } catch (error) {
       console.error('Failed to start speech recognition:', error);
@@ -511,6 +541,9 @@ export function VoiceProvider({ children }: { children: React.ReactNode }) {
     if (!recognitionRef.current) return;
     
     try {
+      // Mark that user wants to stop listening
+      listeningStateRef.current = false;
+      
       if (restartTimeoutRef.current) clearTimeout(restartTimeoutRef.current);
       if (silenceTimeoutRef.current) clearTimeout(silenceTimeoutRef.current);
       
