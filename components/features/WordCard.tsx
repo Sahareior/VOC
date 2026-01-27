@@ -1,36 +1,137 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Heart, CheckCircle, Volume2, ExternalLink, Sparkles } from 'lucide-react';
+import React, { useState, useCallback, useMemo, type MouseEvent, type KeyboardEvent } from 'react';
+import Image from 'next/image';
+import { Heart, CheckCircle, ExternalLink, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
-import { Word } from '@/types';
 import { cn } from '@/lib/utils';
-import { CATEGORY_CONFIGS, DIFFICULTY_CONFIGS } from '@/types';
+
+// Type declarations moved inside the component file
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface Subcategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+export interface Word {
+  id: number;
+  name: string;
+  slug: string;
+  sentence: string;
+  category: Category;
+  subcategory: Subcategory;
+  image: string;
+  definition: string;
+  type: string;
+  difficulty?: 'beginner' | 'intermediate' | 'advanced';
+}
+
+export interface CategoryConfig {
+  color: string;
+  icon: React.ReactNode;
+}
+
+export interface DifficultyConfig {
+  label: string;
+  color: string;
+}
+
+// Category configurations
+export const CATEGORY_CONFIGS: Record<string, CategoryConfig> = {
+  bad: {
+    color: 'bg-red-500/20 text-red-300 border-red-400/30',
+    icon: '❌',
+  },
+  // Add other categories as needed
+  default: {
+    color: 'bg-slate-500/20 text-slate-300 border-slate-400/30',
+    icon: '📚',
+  },
+};
+
+// Difficulty configurations
+export const DIFFICULTY_CONFIGS: Record<string, DifficultyConfig> = {
+  beginner: {
+    label: 'Beginner',
+    color: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
+  },
+  intermediate: {
+    label: 'Intermediate',
+    color: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+  },
+  advanced: {
+    label: 'Advanced',
+    color: 'bg-rose-500/20 text-rose-300 border-rose-400/30',
+  },
+};
 
 interface WordCardProps {
   word: Word;
   isLearned: boolean;
   isFavorite: boolean;
   onOpenModal: (word: Word) => void;
-  onToggleFavorite: (wordId: string) => void;
-  onToggleLearned: (wordId: string) => void;
+  onToggleFavorite: (wordId: number) => void;
+  onToggleLearned: (wordId: number) => void;
 }
 
-export function WordCard({
+export const WordCard: React.FC<WordCardProps> = ({
   word,
   isLearned,
   isFavorite,
   onOpenModal,
   onToggleFavorite,
   onToggleLearned,
-}: WordCardProps) {
+}) => {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
-  const categoryConfig = CATEGORY_CONFIGS[word.category];
-  const difficultyConfig = DIFFICULTY_CONFIGS[word.difficulty];
+  // Memoize configs to prevent recalculation on every render
+  const categoryConfig = useMemo((): CategoryConfig => {
+    const categorySlug = word.category.slug;
+    return CATEGORY_CONFIGS[categorySlug] || CATEGORY_CONFIGS.default;
+  }, [word.category.slug]);
+
+  const difficulty = useMemo(() => word.difficulty || 'intermediate', [word.difficulty]);
+  const difficultyConfig = useMemo((): DifficultyConfig => 
+    DIFFICULTY_CONFIGS[difficulty], [difficulty]);
+
+  const handleCardClick = useCallback(() => {
+    onOpenModal(word);
+  }, [onOpenModal, word]);
+
+  const handleCardKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onOpenModal(word);
+    }
+  }, [onOpenModal, word]);
+
+  const handleToggleFavorite = useCallback((e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    onToggleFavorite(word.id);
+  }, [onToggleFavorite, word.id]);
+
+  const handleToggleLearned = useCallback((e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    onToggleLearned(word.id);
+  }, [onToggleLearned, word.id]);
+
+  // Extract domain for Image loader if needed
+  const imageDomain = useMemo(() => {
+    try {
+      return new URL(word.image).hostname;
+    } catch {
+      return '';
+    }
+  }, [word.image]);
 
   return (
     <div
@@ -62,11 +163,13 @@ export function WordCard({
           
           {!imageError ? (
             <div className="relative h-full">
-              <img
-                src={word.imageUrl}
-                alt={`Illustration for ${word.term}`}
+              <Image
+                src={word.image}
+                alt={`Illustration for ${word.name}`}
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 className={cn(
-                  'w-full h-full object-cover transition-all duration-700',
+                  'object-cover transition-all duration-700',
                   imageLoaded ? 'opacity-100' : 'opacity-0',
                   'group-hover:scale-110 group-hover:rotate-1'
                 )}
@@ -75,6 +178,7 @@ export function WordCard({
                 style={{
                   transform: isHovered ? 'translateZ(20px)' : 'none',
                 }}
+                unoptimized={!imageDomain.includes('res.cloudinary.com')} // Only optimize Cloudinary images
               />
               {/* Image overlay gradient */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-slate-900/30 to-transparent" />
@@ -88,10 +192,8 @@ export function WordCard({
             </div>
           )}
 
-          {/* Premium badges */}
-          <div className="absolute top-4 left-4 flex flex-col gap-2">
-         
-          </div>
+          {/* Category and Type badges */}
+
 
           {/* Floating action buttons */}
           <div 
@@ -101,10 +203,7 @@ export function WordCard({
             }}
           >
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleFavorite(word.id);
-              }}
+              onClick={handleToggleFavorite}
               className={cn(
                 'p-2.5 rounded-xl backdrop-blur-lg border transition-all duration-300',
                 'transform-gpu hover:scale-110 active:scale-95',
@@ -117,21 +216,15 @@ export function WordCard({
               <Heart
                 className={cn(
                   'w-4 h-4 transition-all duration-300',
-                  isFavorite && 'fill-current animate-pulse'
+                  isFavorite && 'fill-current'
                 )}
               />
             </button>
             
-            <button
-              onClick={() => onOpenModal(word)}
-              className="p-2.5 rounded-xl backdrop-blur-lg border border-white/20 text-slate-300 hover:bg-white/20 hover:text-white transition-all duration-300 transform-gpu hover:scale-110 active:scale-95"
-              aria-label="Open word details"
-            >
-              <ExternalLink className="w-4 h-4" />
-            </button>
+
           </div>
 
-          {/* Learned indicator - premium */}
+          {/* Learned indicator */}
           {isLearned && (
             <div 
               className="absolute bottom-4 right-4"
@@ -150,48 +243,48 @@ export function WordCard({
         {/* Content area */}
         <div
           className="p-5 cursor-pointer"
-          onClick={() => onOpenModal(word)}
+          onClick={handleCardClick}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              onOpenModal(word);
-            }
-          }}
+          onKeyDown={handleCardKeyDown}
           style={{
             transform: isHovered ? 'translateZ(5px)' : 'none',
           }}
         >
-          {/* Header with premium typography */}
+          {/* Header */}
           <div className="flex items-start justify-between gap-3 mb-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-500 group-hover:to-purple-500 transition-all duration-500">
-                  {word.term}
+                  {word.name}
                 </h3>
-                {word.difficulty === 'advanced' && (
-                  <Sparkles className="w-4 h-4 text-purple-400 animate-pulse" />
-                )}
               </div>
-
+              
+              {/* Subcategory */}
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {word.subcategory.name}
+              </p>
             </div>
             
-            {/* Difficulty badge - premium */}
+            {/* Difficulty badge */}
+    
+              <div className=" top-4 left-4 flex  gap-2">
             <Badge
-              size="sm"
               className={cn(
-                'glass-effect backdrop-blur-md border-white/20 px-3 py-1.5',
-                'font-semibold tracking-wide text-xs uppercase',
-                'transition-all duration-300 transform-gpu hover:scale-105',
-                difficultyConfig.color
+                'glass-effect backdrop-blur-lg border-white/20',
+                'text-xs font-semibold px-2.5 py-1',
+                categoryConfig.color
               )}
-              style={{
-                transform: isHovered ? 'translateZ(10px)' : 'none',
-              }}
             >
-              {difficultyConfig.label}
+              {word.category.name}
             </Badge>
+            
+            <Badge
+              className="glass-effect backdrop-blur-lg border-white/20 bg-slate-800/60 text-slate-200 text-xs font-semibold px-2.5 py-1 capitalize"
+            >
+              {word.type}
+            </Badge>
+          </div>
           </div>
 
           {/* Definition */}
@@ -199,11 +292,11 @@ export function WordCard({
             {word.definition}
           </p>
 
-          {/* Example preview with premium styling */}
+          {/* Sentence/Example preview */}
           <div className="relative pl-4 mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/50">
             <div className="absolute left-0 top-3 w-1 h-1/2 bg-gradient-to-b from-blue-400 to-purple-400 rounded-full" />
             <p className="text-xs text-slate-500 dark:text-slate-400 italic leading-snug line-clamp-1">
-              &ldquo;{word.example}&rdquo;
+              &ldquo;{word.sentence}&rdquo;
             </p>
           </div>
 
@@ -216,24 +309,10 @@ export function WordCard({
       </div>
     </div>
   );
-}
+};
 
-// Add to your global CSS or Tailwind config:
-const premiumStyles = `
-.glass-effect {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-}
-
-.perspective-1000 {
-  perspective: 1000px;
-}
-
-.transform-gpu {
-  transform-style: preserve-3d;
-  backface-visibility: hidden;
-}
-`;
+// Helper function to ensure we have all required fields
+export const transformApiWord = (apiWord: any): Word => ({
+  ...apiWord,
+  difficulty: apiWord.difficulty || 'intermediate',
+});

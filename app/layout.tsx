@@ -9,6 +9,7 @@ import { Header } from '@/components/layout/Header';
 import { useState } from 'react';
 import VoiceCommand from '@/components/features/VoiceCommand';
 import Footer from './homepage-component/Footer';
+import ReduxProvider from '@/redux/ReduxProvider';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -60,7 +61,7 @@ export default function RootLayout({
                 <VoiceCommandHandler />
                 <Header />
                 <main className="flex-1">
-                  {children}
+                  <ReduxProvider>{children}</ReduxProvider>
                 </main>
                 <VoiceCommand />
                 <Footer />

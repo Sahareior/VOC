@@ -1,130 +1,69 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
+import { useGetGroupsQuery } from '@/redux/slices/apiSlice';
 
-const groupData = [
-  {
-    category: 'Good',
-    total: 902,
-    items: [
-      { name: 'Beautiful', count: 50 },
-      { name: 'Big', count: 61 },
-      { name: 'Brave', count: 19 },
-      { name: 'Busy', count: 27 },
-      { name: 'Calm', count: 57 },
-      { name: 'Energy', count: 52 },
-      { name: 'Exciting', count: 52 },
-      { name: 'Flexible', count: 53 },
-      { name: 'Friendly', count: 78 },
-      { name: 'Good', count: 42 },
-      { name: 'Happy', count: 43 },
-      { name: 'Important', count: 28 },
-      { name: 'Love', count: 40 },
-      { name: 'New', count: 28 },
-      { name: 'Pleasure', count: 48 },
-      { name: 'Smart', count: 62 },
-      { name: 'Smart-Adj', count: 45 },
-      { name: 'Strong', count: 69 },
-      { name: 'Successful', count: 45 },
-    ]
-  },
-  {
-    category: 'Bad',
-    total: 1578,
-    items: [
-      { name: 'Afraid', count: 26 },
-      { name: 'Aggressive', count: 72 },
-      { name: 'Angry', count: 36 },
-      { name: 'Attack', count: 71 },
-      { name: 'Bad', count: 68 },
-      { name: 'Boring', count: 16 },
-      { name: 'Confused', count: 45 },
-      { name: 'Crazy', count: 26 },
-      { name: 'Dangerous', count: 72 },
-      { name: 'Delay', count: 31 },
-      { name: 'Dirty', count: 27 },
-      { name: 'Disgusting', count: 60 },
-      { name: 'Dishonest', count: 72 },
-      { name: 'Dislike', count: 22 },
-      { name: 'Disorganized', count: 65 },
-      { name: 'Hostile', count: 74 },
-      { name: 'Hurt', count: 46 },
-      { name: 'Mistake', count: 45 },
-      { name: 'Nervous', count: 26 },
-      { name: 'Old', count: 27 },
-      { name: 'Pain', count: 34 },
-      { name: 'Powerless', count: 44 },
-      { name: 'Small', count: 76 },
-      { name: 'Steal', count: 27 },
-      { name: 'Strange', count: 78 },
-      { name: 'Stupid', count: 67 },
-      { name: 'Uncomfortable', count: 42 },
-      { name: 'Unfriendly', count: 76 },
-      { name: 'Unhappy', count: 72 },
-      { name: 'War', count: 58 },
-      { name: 'Weak', count: 77 },
-    ]
-  },
-  {
-    category: 'Other',
-    total: 733,
-    items: [
-      { name: 'Body', count: 71 },
-      { name: 'Desire', count: 22 },
-      { name: 'Entice', count: 22 },
-      { name: 'Fast', count: 39 },
-      { name: 'Inward', count: 71 },
-      { name: 'Light', count: 42 },
-      { name: 'Move', count: 78 },
-      { name: 'Other', count: 62 },
-      { name: 'Shape', count: 74 },
-      { name: 'Slowly', count: 29 },
-      { name: 'Sound', count: 68 },
-      { name: 'Squeeze', count: 16 },
-      { name: 'Stop', count: 22 },
-      { name: 'Surprise', count: 19 },
-      { name: 'Up+Down', count: 37 },
-      { name: 'Wet', count: 59 },
-    ]
-  }
-];
+// Define the types for your data based on actual API response
+interface Subcategory {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+interface GroupCategory {
+  id: number;
+  name: string;
+  slug: string;
+  subcategories: Subcategory[];
+}
 
 export default function Groups() {
   const [search, setSearch] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['Good', 'Bad', 'Other']);
-  const { theme, toggleTheme } = useTheme();
-  const router = useRouter()
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
+  const { theme } = useTheme();
+  const router = useRouter();
+  const { data: groupsData, isLoading, error } = useGetGroupsQuery();
 
+  // Initialize expanded categories when data is loaded
+  useEffect(() => {
+    if (groupsData && groupsData.length > 0) {
+      setExpandedCategories(groupsData.map((group: GroupCategory) => group.name));
+    }
+  }, [groupsData]);
 
-
-  const toggleCategory = (category: string) => {
+  const toggleCategory = (categoryName: string) => {
     setExpandedCategories(prev =>
-      prev.includes(category)
-        ? prev.filter(c => c !== category)
-        : [...prev, category]
+      prev.includes(categoryName)
+        ? prev.filter(c => c !== categoryName)
+        : [...prev, categoryName]
     );
   };
 
   const expandAll = () => {
-    setExpandedCategories(groupData.map(g => g.category));
+    if (groupsData) {
+      setExpandedCategories(groupsData.map((group: GroupCategory) => group.name));
+    }
   };
 
   const collapseAll = () => {
     setExpandedCategories([]);
   };
 
-  const filteredData = groupData.map(category => ({
-    ...category,
-    items: category.items.filter(item =>
-      item.name.toLowerCase().includes(search.toLowerCase())
-    )
-  })).filter(category => 
-    category.items.length > 0 || 
-    category.category.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filter data based on search
+  const filteredData = groupsData ? groupsData
+    .map((category: GroupCategory) => ({
+      ...category,
+      subcategories: category.subcategories.filter(item =>
+        item.name.toLowerCase().includes(search.toLowerCase())
+      )
+    }))
+    .filter((category: GroupCategory) => 
+      category.subcategories.length > 0 || 
+      category.name.toLowerCase().includes(search.toLowerCase())
+    ) : [];
 
   const themeClasses = {
     light: {
@@ -155,6 +94,56 @@ export default function Groups() {
 
   const t = themeClasses[theme];
 
+  // Calculate total subcategories (items)
+  const totalItems = groupsData ? 
+    groupsData.reduce((sum: number, cat: GroupCategory) => sum + cat.subcategories.length, 0) : 0;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className={`min-h-screen transition-colors ${t.bg} ${t.text}`}>
+        <div className="max-w-6xl mx-auto p-4 md:p-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto"></div>
+              <p className="mt-4">Loading vocabulary groups...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className={`min-h-screen transition-colors ${t.bg} ${t.text}`}>
+        <div className="max-w-6xl mx-auto p-4 md:p-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center text-red-500">
+              <p>Error loading vocabulary groups. Please try again later.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // No data state
+  if (!groupsData || groupsData.length === 0) {
+    return (
+      <div className={`min-h-screen transition-colors ${t.bg} ${t.text}`}>
+        <div className="max-w-6xl mx-auto p-4 md:p-6">
+          <div className="flex justify-center items-center h-64">
+            <div className="text-center">
+              <p>No vocabulary groups found.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen transition-colors ${t.bg} ${t.text}`}>
       <div className="max-w-6xl mx-auto p-4 md:p-6">
@@ -162,29 +151,52 @@ export default function Groups() {
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-bold">Vocabulary Groups</h1>
-
           </div>
 
           {/* Search */}
-        
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search vocabulary..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className={`w-full p-3 pl-10 rounded-lg border ${t.search} ${t.text}`}
+              />
+              <div className="absolute left-3 top-3.5">
+                <svg
+                  className="w-5 h-5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+          </div>
 
           {/* Controls */}
           <div className="flex items-center justify-between mb-4">
             <div className="text-sm">
-              Total Words: <span className="font-semibold">
-                {groupData.reduce((sum, cat) => sum + cat.total, 0)}
-              </span>
+              Total Subcategories: <span className="font-semibold">{totalItems}</span>
             </div>
             <div className="flex gap-2">
               <button
                 onClick={expandAll}
-                className="px-3 py-1 text-sm rounded border"
+                className={`px-3 py-1 text-sm rounded border ${t.border} ${t.hover}`}
               >
                 Expand All
               </button>
               <button
                 onClick={collapseAll}
-                className="px-3 py-1 text-sm rounded border"
+                className={`px-3 py-1 text-sm rounded border ${t.border} ${t.hover}`}
               >
                 Collapse All
               </button>
@@ -194,17 +206,17 @@ export default function Groups() {
 
         {/* Categories */}
         <div className="space-y-4">
-          {filteredData.map((category) => {
-            const isExpanded = expandedCategories.includes(category.category);
+          {filteredData.map((category: GroupCategory) => {
+            const isExpanded = expandedCategories.includes(category.name);
             
             return (
               <div
-                key={category.category}
+                key={category.id}
                 className={`rounded-lg ${t.card} border ${t.border} overflow-hidden`}
               >
                 {/* Category Header */}
                 <button
-                  onClick={() => toggleCategory(category.category)}
+                  onClick={() => toggleCategory(category.name)}
                   className={`w-full px-4 py-3 flex items-center justify-between ${t.hover}`}
                 >
                   <div className="flex items-center gap-3">
@@ -213,13 +225,13 @@ export default function Groups() {
                     ) : (
                       <ChevronRight size={20} className={t.textSecondary} />
                     )}
-                    <span className="font-semibold">{category.category}</span>
+                    <span className="font-semibold">{category.name}</span>
                     <span className={`px-2 py-1 rounded text-xs ${t.count}`}>
-                      {category.total} words
+                      {category.subcategories.length} subcategories
                     </span>
                   </div>
                   <div className="text-sm">
-                    {category.items.length} items
+                    {category.subcategories.length} items
                   </div>
                 </button>
 
@@ -227,15 +239,21 @@ export default function Groups() {
                 {isExpanded && (
                   <div className="px-4 pb-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-3">
-                      {category.items.map((item) => (
+                      {category.subcategories.map((item: Subcategory) => (
                         <div
-                          key={item.name}
+                          key={item.id}
                           className={`px-3 py-2 rounded ${t.item} transition-colors flex items-center justify-between`}
                         >
-                          <button onClick={()=> router.push('/groups/3')} className="font-medium">{item.name}</button >
-                          <span className={`px-2 py-1 rounded text-sm ${t.count}`}>
+                          <button 
+                            onClick={() => router.push(`/groups/${item.slug}`)} 
+                            className="font-medium hover:underline"
+                          >
+                            {item.name}
+                          </button>
+                          {/* You can add count here if available from another API endpoint */}
+                          {/* <span className={`px-2 py-1 rounded text-sm ${t.count}`}>
                             {item.count}
-                          </span>
+                          </span> */}
                         </div>
                       ))}
                     </div>
@@ -246,10 +264,17 @@ export default function Groups() {
           })}
         </div>
 
-        {/* Empty State */}
-        {filteredData.length === 0 && (
+        {/* Empty State for search - Only show if search is not empty */}
+        {search && filteredData.length === 0 && (
           <div className="text-center py-12">
             <p className={t.textSecondary}>No vocabulary found matching "{search}"</p>
+          </div>
+        )}
+        
+        {/* Show all data is loaded when search is empty and filteredData has items */}
+        {!search && filteredData.length > 0 && (
+          <div className="text-center py-6 text-sm">
+            <p className={t.textSecondary}>Showing all {totalItems} vocabulary items</p>
           </div>
         )}
       </div>

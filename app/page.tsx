@@ -9,6 +9,7 @@ import { SAMPLE_WORDS } from '@/lib/data';
 import { useUser } from '@/contexts/UserContext';
 import { VoiceHelpModal } from '@/components/features/VoiceController';
 import Hero from './homepage-component/Hero';
+import { useGetWordsQuery } from '@/redux/slices/apiSlice';
 
 export default function HomePage() {
   const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
@@ -17,6 +18,15 @@ export default function HomePage() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [words, setWords] = useState<Word[]>(SAMPLE_WORDS);
   const [activeSort, setActiveSort] = useState<SortType>('newest');
+
+    const { data, isLoading, error } = useGetWordsQuery({
+    offset: 0,
+    limit: 20,
+    sort: 'az',
+  });
+
+
+  console.log(data,'yhgy')
 
   // Handle voice commands
   useEffect(() => {
@@ -32,11 +42,11 @@ export default function HomePage() {
           }
           break;
           
-        case 'sort':
-          if (sortType) {
-            handleSort(sortType);
-          }
-          break;
+        // case 'sort':
+        //   if (sortType) {
+        //     handleSort(sortType);
+        //   }
+        //   break;
           
         case 'open-card':
           if (typeof index === 'number' && words[index]) {
@@ -108,39 +118,39 @@ export default function HomePage() {
   }, [selectedWord, words]);
 
   // Sorting function
-  const handleSort = useCallback((sortType: SortType) => {
-    let sortedWords = [...SAMPLE_WORDS];
+  // const handleSort = useCallback((sortType: SortType) => {
+  //   let sortedWords = [...SAMPLE_WORDS];
     
-    switch (sortType) {
-      case 'random':
-        sortedWords = sortedWords.sort(() => Math.random() - 0.5);
-        break;
-      case 'az':
-        sortedWords = sortedWords.sort((a, b) => a.term.localeCompare(b.term));
-        break;
-      case 'newest':
-        // Assuming newer words have higher IDs
-        sortedWords = sortedWords.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-        break;
-      case 'difficulty':
-        const difficultyOrder = { beginner: 0, intermediate: 1, advanced: 2 };
-        sortedWords = sortedWords.sort((a, b) => 
-          difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]
-        );
-        break;
-    }
+  //   switch (sortType) {
+  //     case 'random':
+  //       sortedWords = sortedWords.sort(() => Math.random() - 0.5);
+  //       break;
+  //     case 'az':
+  //       sortedWords = sortedWords.sort((a, b) => a.term.localeCompare(b.term));
+  //       break;
+  //     case 'newest':
+  //       // Assuming newer words have higher IDs
+  //       sortedWords = sortedWords.sort((a, b) => parseInt(b.id) - parseInt(a.id));
+  //       break;
+  //     case 'difficulty':
+  //       const difficultyOrder = { beginner: 0, intermediate: 1, advanced: 2 };
+  //       sortedWords = sortedWords.sort((a, b) => 
+  //         difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]
+  //       );
+  //       break;
+  //   }
     
-    setWords(sortedWords);
-    setActiveSort(sortType);
+  //   setWords(sortedWords);
+  //   setActiveSort(sortType);
     
-    // If modal is open, update the selected word based on new sort order
-    if (selectedWord && isModalOpen) {
-      const newSelectedWord = sortedWords.find(w => w.id === selectedWord.id);
-      if (newSelectedWord) {
-        setSelectedWord(newSelectedWord);
-      }
-    }
-  }, [selectedWord, isModalOpen]);
+  //   // If modal is open, update the selected word based on new sort order
+  //   if (selectedWord && isModalOpen) {
+  //     const newSelectedWord = sortedWords.find(w => w.id === selectedWord.id);
+  //     if (newSelectedWord) {
+  //       setSelectedWord(newSelectedWord);
+  //     }
+  //   }
+  // }, [selectedWord, isModalOpen]);
 
   // Open word modal
   const handleOpenModal = useCallback((word: Word) => {
@@ -166,12 +176,7 @@ export default function HomePage() {
     return words.findIndex(w => w.id === selectedWord.id) + 1;
   }, [selectedWord, words]);
 
-  // Stats for the hero section
-  const stats = {
-    totalWords: words.length,
-    learnedCount: words.filter(w => isLearned(w.id)).length,
-    streak: 7,
-  };
+
 
   return (
     <div className="min-h-screen">
@@ -194,31 +199,12 @@ export default function HomePage() {
           </div>
           
           {/* Sort Controls */}
-<div className="flex gap-2 overflow-x-auto w-[90vw] md:w-full justify-start md:justify-end example md:ml-auto">
-  {[
-    { key: 'random', label: 'Random' },
-    { key: 'az', label: 'A-Z' },
-    { key: 'newest', label: 'Newest' },
-    { key: 'difficulty', label: 'Difficulty' },
-  ].map(({ key, label }) => (
-    <button
-      key={key}
-      onClick={() => handleSort(key as SortType)}
-      className={`shrink-0 rounded-lg px-4 py-1 text-sm transition-colors ${
-        activeSort === key
-          ? 'bg-primary-600 text-white'
-          : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
-      }`}
-    >
-      {label}
-    </button>
-  ))}
-</div>
+
 
 
         </div>
 
-        <WordGrid words={words} onOpenModal={handleOpenModal} />
+        <WordGrid words={words} data={data} onOpenModal={handleOpenModal} />
       </section>
 
       {/* Word Detail Modal */}
