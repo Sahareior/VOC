@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { BookOpen, Sparkles, Target, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { WordGrid } from '@/components/features/WordGrid';
 import { WordModal } from '@/components/features/WordModal';
 import { Word, SortType } from '@/types';
-import { SAMPLE_WORDS } from '@/lib/data';
 import { useUser } from '@/contexts/UserContext';
 import { VoiceHelpModal } from '@/components/features/VoiceController';
 import Hero from './homepage-component/Hero';
@@ -16,141 +15,8 @@ export default function HomePage() {
   const [selectedWord, setSelectedWord] = useState<Word | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [words, setWords] = useState<Word[]>(SAMPLE_WORDS);
-  const [activeSort, setActiveSort] = useState<SortType>('newest');
+  const [displayWords, setDisplayWords] = useState<Word[]>([]);
 
-    const { data, isLoading, error } = useGetWordsQuery({
-    offset: 0,
-    limit: 20,
-    sort: 'az',
-  });
-
-
-  console.log(data,'yhgy')
-
-  // Handle voice commands
-  useEffect(() => {
-    const handleVoiceCommand = (event: CustomEvent) => {
-      console.log('Voice command received:', event.detail);
-      const { command, word, sortType, index } = event.detail;
-      
-      switch (command) {
-        case 'open-word':
-          if (word) {
-            setSelectedWord(word);
-            setIsModalOpen(true);
-          }
-          break;
-          
-        // case 'sort':
-        //   if (sortType) {
-        //     handleSort(sortType);
-        //   }
-        //   break;
-          
-        case 'open-card':
-          if (typeof index === 'number' && words[index]) {
-            setSelectedWord(words[index]);
-            setIsModalOpen(true);
-          }
-          break;
-          
-        case 'next-card':
-          handleNextCard();
-          break;
-          
-        case 'previous-card':
-          handlePreviousCard();
-          break;
-          
-        case 'next':
-          handleNextCard();
-          break;
-          
-        case 'previous':
-          handlePreviousCard();
-          break;
-      }
-    };
-
-    // Listen for voice commands
-    window.addEventListener('voice-command', handleVoiceCommand as EventListener);
-    
-    return () => {
-      window.removeEventListener('voice-command', handleVoiceCommand as EventListener);
-    };
-  }, [words, selectedWord]);
-
-  // Navigate to next card in modal
-  const handleNextCard = useCallback(() => {
-    if (!selectedWord) {
-      // If no modal is open, open the first word
-      if (words.length > 0) {
-        setSelectedWord(words[0]);
-        setIsModalOpen(true);
-      }
-      return;
-    }
-    
-    const currentIndex = words.findIndex(w => w.id === selectedWord.id);
-    if (currentIndex === -1) return;
-    
-    const nextIndex = (currentIndex + 1) % words.length;
-    setSelectedWord(words[nextIndex]);
-  }, [selectedWord, words]);
-
-  // Navigate to previous card in modal
-  const handlePreviousCard = useCallback(() => {
-    if (!selectedWord) {
-      // If no modal is open, open the last word
-      if (words.length > 0) {
-        setSelectedWord(words[words.length - 1]);
-        setIsModalOpen(true);
-      }
-      return;
-    }
-    
-    const currentIndex = words.findIndex(w => w.id === selectedWord.id);
-    if (currentIndex === -1) return;
-    
-    const prevIndex = (currentIndex - 1 + words.length) % words.length;
-    setSelectedWord(words[prevIndex]);
-  }, [selectedWord, words]);
-
-  // Sorting function
-  // const handleSort = useCallback((sortType: SortType) => {
-  //   let sortedWords = [...SAMPLE_WORDS];
-    
-  //   switch (sortType) {
-  //     case 'random':
-  //       sortedWords = sortedWords.sort(() => Math.random() - 0.5);
-  //       break;
-  //     case 'az':
-  //       sortedWords = sortedWords.sort((a, b) => a.term.localeCompare(b.term));
-  //       break;
-  //     case 'newest':
-  //       // Assuming newer words have higher IDs
-  //       sortedWords = sortedWords.sort((a, b) => parseInt(b.id) - parseInt(a.id));
-  //       break;
-  //     case 'difficulty':
-  //       const difficultyOrder = { beginner: 0, intermediate: 1, advanced: 2 };
-  //       sortedWords = sortedWords.sort((a, b) => 
-  //         difficultyOrder[a.difficulty] - difficultyOrder[b.difficulty]
-  //       );
-  //       break;
-  //   }
-    
-  //   setWords(sortedWords);
-  //   setActiveSort(sortType);
-    
-  //   // If modal is open, update the selected word based on new sort order
-  //   if (selectedWord && isModalOpen) {
-  //     const newSelectedWord = sortedWords.find(w => w.id === selectedWord.id);
-  //     if (newSelectedWord) {
-  //       setSelectedWord(newSelectedWord);
-  //     }
-  //   }
-  // }, [selectedWord, isModalOpen]);
 
   // Open word modal
   const handleOpenModal = useCallback((word: Word) => {
@@ -164,19 +30,46 @@ export default function HomePage() {
     setSelectedWord(null);
   }, []);
 
-  // Handle asking AI about the current word
-  const handleAskAI = useCallback((word: Word) => {
-    setIsModalOpen(false);
-    // The AI chat widget will pick up this context
-  }, []);
+const onNext = (currentIndex: number) => {
+  if (currentIndex < displayWords.length - 1) {
+    setSelectedWord(displayWords[currentIndex + 1]);
+  }
+};
+
+const onPrevious = (currentIndex: number) => {
+  if (currentIndex > 0) {
+    setSelectedWord(displayWords[currentIndex - 1]);
+  }
+};
 
   // Get word index for display
   const getWordIndex = useCallback(() => {
-    if (!selectedWord) return null;
-    return words.findIndex(w => w.id === selectedWord.id) + 1;
-  }, [selectedWord, words]);
+    if (!selectedWord || displayWords.length === 0) return null;
+    return displayWords.findIndex(w => w.id === selectedWord.id) + 1;
+  }, [selectedWord, displayWords]);
 
+  // Show loading state
+  if (false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Sparkles className="w-12 h-12 animate-pulse text-blue-500 mx-auto mb-4" />
+          <p className="text-slate-600 dark:text-slate-300">Loading words...</p>
+        </div>
+      </div>
+    );
+  }
 
+  // Show error state
+  if (false) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-500">Error loading words. Please try again.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen">
@@ -197,32 +90,30 @@ export default function HomePage() {
               Click on any card to view details, pronunciation, and examples
             </p>
           </div>
-          
-          {/* Sort Controls */}
-
-
-
         </div>
 
-        <WordGrid words={words} data={data} onOpenModal={handleOpenModal} />
+        <WordGrid 
+          onOpenModal={handleOpenModal} 
+          onWordsUpdate={setDisplayWords}
+        />
       </section>
 
       {/* Word Detail Modal */}
-      <WordModal
-        word={selectedWord}
-        isOpen={isModalOpen}
-        isLearned={selectedWord ? isLearned(selectedWord.id) : false}
-        isFavorite={selectedWord ? isFavorite(selectedWord.id) : false}
-        onClose={handleCloseModal}
-        onToggleFavorite={toggleFavorite}
-        onToggleLearned={toggleLearned}
-        onAskAI={handleAskAI}
-        // Add navigation props to WordModal
-        onNext={handleNextCard}
-        onPrevious={handlePreviousCard}
-        currentIndex={getWordIndex()}
-        totalWords={words.length}
-      />
+      {displayWords.length > 0 && (
+        <WordModal
+          word={selectedWord}
+          onNext={onNext}
+          onPrevious={onPrevious}
+          isOpen={isModalOpen}
+          isLearned={selectedWord ? isLearned(selectedWord.id) : false}
+          isFavorite={selectedWord ? isFavorite(selectedWord.id) : false}
+          onClose={handleCloseModal}
+          onToggleFavorite={toggleFavorite}
+          onToggleLearned={toggleLearned}
+          currentIndex={selectedWord ? displayWords.findIndex(w => w.id === selectedWord.id) : null}
+          totalWords={displayWords.length}
+        />
+      )}
     </div>
   );
 }

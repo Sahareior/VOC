@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment, useEffect, useCallback } from 'react';
+import React, { Fragment, useCallback } from 'react';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -27,26 +27,6 @@ export function Modal({
   closeOnOverlay = true,
   closeOnEscape = true,
 }: ModalProps) {
-  // Handle escape key
-  useEffect(() => {
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && closeOnEscape) {
-        onClose();
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener('keydown', handleEscape);
-      // Prevent body scroll
-      document.body.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.removeEventListener('keydown', handleEscape);
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen, closeOnEscape, onClose]);
-
   // Handle overlay click
   const handleOverlayClick = useCallback(
     (event: React.MouseEvent) => {

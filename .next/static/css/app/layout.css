@@ -693,6 +693,9 @@ video {
 .pointer-events-auto {
   pointer-events: auto;
 }
+.visible {
+  visibility: visible;
+}
 .fixed {
   position: fixed;
 }
@@ -798,14 +801,14 @@ video {
 .top-3 {
   top: 0.75rem;
 }
+.top-3\.5 {
+  top: 0.875rem;
+}
 .top-4 {
   top: 1rem;
 }
 .top-full {
   top: 100%;
-}
-.top-3\.5 {
-  top: 0.875rem;
 }
 .z-10 {
   z-index: 10;
@@ -891,6 +894,9 @@ video {
 }
 .mt-6 {
   margin-top: 1.5rem;
+}
+.ml-auto {
+  margin-left: auto;
 }
 .line-clamp-1 {
   overflow: hidden;
@@ -1352,6 +1358,10 @@ video {
   --tw-border-opacity: 1;
   border-color: rgb(191 219 254 / var(--tw-border-opacity, 1));
 }
+.border-blue-500 {
+  --tw-border-opacity: 1;
+  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
 .border-emerald-100 {
   --tw-border-opacity: 1;
   border-color: rgb(209 250 229 / var(--tw-border-opacity, 1));
@@ -1434,10 +1444,6 @@ video {
 }
 .border-white\/5 {
   border-color: rgb(255 255 255 / 0.05);
-}
-.border-blue-500 {
-  --tw-border-opacity: 1;
-  border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
 }
 .bg-amber-100 {
   --tw-bg-opacity: 1;
@@ -1789,6 +1795,16 @@ video {
   --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
+.from-amber-50 {
+  --tw-gradient-from: #fffbeb var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(255 251 235 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+.from-emerald-50 {
+  --tw-gradient-from: #ecfdf5 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(236 253 245 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
 .via-blue-400 {
   --tw-gradient-to: rgb(96 165 250 / 0)  var(--tw-gradient-to-position);
   --tw-gradient-stops: var(--tw-gradient-from), #60a5fa var(--tw-gradient-via-position), var(--tw-gradient-to);
@@ -1905,6 +1921,12 @@ video {
 .to-transparent {
   --tw-gradient-to: transparent var(--tw-gradient-to-position);
 }
+.to-amber-100 {
+  --tw-gradient-to: #fef3c7 var(--tw-gradient-to-position);
+}
+.to-emerald-100 {
+  --tw-gradient-to: #d1fae5 var(--tw-gradient-to-position);
+}
 .bg-clip-text {
   -webkit-background-clip: text;
           background-clip: text;
@@ -2000,13 +2022,13 @@ video {
   padding-top: 1rem;
   padding-bottom: 1rem;
 }
-.py-8 {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
-}
 .py-6 {
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
+}
+.py-8 {
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 .pb-0 {
   padding-bottom: 0px;
@@ -2037,9 +2059,6 @@ video {
 }
 .pt-6 {
   padding-top: 1.5rem;
-}
-.pr-4 {
-  padding-right: 1rem;
 }
 .text-center {
   text-align: center;
@@ -2318,6 +2337,14 @@ video {
 .text-white\/80 {
   color: rgb(255 255 255 / 0.8);
 }
+.text-blue-500 {
+  --tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
+}
+.text-amber-600 {
+  --tw-text-opacity: 1;
+  color: rgb(217 119 6 / var(--tw-text-opacity, 1));
+}
 .antialiased {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -2460,6 +2487,9 @@ video {
 }
 .delay-500 {
   transition-delay: 500ms;
+}
+.delay-75 {
+  transition-delay: 75ms;
 }
 .duration-200 {
   transition-duration: 200ms;
@@ -2670,9 +2700,9 @@ Retrieved 2026-01-22, License - CC BY-SA 4.0
 }
 
 
-.hover\:bg-gray-100:hover {
+.hover\:bg-blue-600:hover {
   --tw-bg-opacity: 1;
-  background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1));
+  background-color: rgb(37 99 235 / var(--tw-bg-opacity, 1));
 }
 
 
@@ -2745,12 +2775,6 @@ Retrieved 2026-01-22, License - CC BY-SA 4.0
 .hover\:text-slate-900:hover {
   --tw-text-opacity: 1;
   color: rgb(15 23 42 / var(--tw-text-opacity, 1));
-}
-
-
-.hover\:text-blue-500:hover {
-  --tw-text-opacity: 1;
-  color: rgb(59 130 246 / var(--tw-text-opacity, 1));
 }
 
 
@@ -2847,9 +2871,15 @@ Retrieved 2026-01-22, License - CC BY-SA 4.0
 }
 
 
-.focus\:ring-blue-500:focus {
+.focus\:ring-amber-500:focus {
   --tw-ring-opacity: 1;
-  --tw-ring-color: rgb(59 130 246 / var(--tw-ring-opacity, 1));
+  --tw-ring-color: rgb(245 158 11 / var(--tw-ring-opacity, 1));
+}
+
+
+.focus\:ring-emerald-500:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(16 185 129 / var(--tw-ring-opacity, 1));
 }
 
 
@@ -3194,6 +3224,20 @@ Retrieved 2026-01-22, License - CC BY-SA 4.0
 }
 
 
+.dark\:from-amber-900\/30:is(.dark *) {
+  --tw-gradient-from: rgb(120 53 15 / 0.3) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(120 53 15 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+
+.dark\:from-emerald-900\/30:is(.dark *) {
+  --tw-gradient-from: rgb(6 78 59 / 0.3) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(6 78 59 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+
 .dark\:to-emerald-900\/5:is(.dark *) {
   --tw-gradient-to: rgb(6 78 59 / 0.05) var(--tw-gradient-to-position);
 }
@@ -3211,6 +3255,16 @@ Retrieved 2026-01-22, License - CC BY-SA 4.0
 
 .dark\:to-slate-900:is(.dark *) {
   --tw-gradient-to: #0f172a var(--tw-gradient-to-position);
+}
+
+
+.dark\:to-amber-800\/30:is(.dark *) {
+  --tw-gradient-to: rgb(146 64 14 / 0.3) var(--tw-gradient-to-position);
+}
+
+
+.dark\:to-emerald-800\/30:is(.dark *) {
+  --tw-gradient-to: rgb(6 95 70 / 0.3) var(--tw-gradient-to-position);
 }
 
 
@@ -3375,12 +3429,6 @@ Retrieved 2026-01-22, License - CC BY-SA 4.0
 }
 
 
-.dark\:hover\:bg-gray-700:hover:is(.dark *) {
-  --tw-bg-opacity: 1;
-  background-color: rgb(55 65 81 / var(--tw-bg-opacity, 1));
-}
-
-
 .dark\:hover\:text-emerald-400:hover:is(.dark *) {
   --tw-text-opacity: 1;
   color: rgb(52 211 153 / var(--tw-text-opacity, 1));
@@ -3408,12 +3456,6 @@ Retrieved 2026-01-22, License - CC BY-SA 4.0
 .dark\:hover\:text-white:hover:is(.dark *) {
   --tw-text-opacity: 1;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1));
-}
-
-
-.dark\:hover\:text-blue-400:hover:is(.dark *) {
-  --tw-text-opacity: 1;
-  color: rgb(96 165 250 / var(--tw-text-opacity, 1));
 }
 
 

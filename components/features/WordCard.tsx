@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, type MouseEvent, type KeyboardEvent } from 'react';
+import React, { useState, useCallback, useMemo, type MouseEvent } from 'react';
 import Image from 'next/image';
 import { Heart, CheckCircle, ExternalLink, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/Card';
@@ -105,13 +105,6 @@ export const WordCard: React.FC<WordCardProps> = ({
 
   const handleCardClick = useCallback(() => {
     onOpenModal(word);
-  }, [onOpenModal, word]);
-
-  const handleCardKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onOpenModal(word);
-    }
   }, [onOpenModal, word]);
 
   const handleToggleFavorite = useCallback((e: MouseEvent<HTMLButtonElement>) => {
@@ -244,9 +237,6 @@ export const WordCard: React.FC<WordCardProps> = ({
         <div
           className="p-5 cursor-pointer"
           onClick={handleCardClick}
-          role="button"
-          tabIndex={0}
-          onKeyDown={handleCardKeyDown}
           style={{
             transform: isHovered ? 'translateZ(5px)' : 'none',
           }}

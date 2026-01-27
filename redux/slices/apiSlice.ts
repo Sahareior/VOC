@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 type GetWordsParams = {
   offset?: number;
   limit?: number;
-  sort?: 'id' | 'az' | 'za' | 'random';
+  sort?: 'id' | 'az' | 'za' | 'random' | 'newest' | 'difficulty';
 };
 
 type SearchParams = {

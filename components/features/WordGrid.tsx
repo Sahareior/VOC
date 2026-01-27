@@ -13,8 +13,8 @@ import { useGetWordsQuery, useLazyGetSearchWordsQuery } from '@/redux/slices/api
 type SortType = 'id' | 'az' | 'za' | 'random';
 
 interface WordGridProps {
-  initialWords?: Word[];
   onOpenModal: (word: Word) => void;
+  onWordsUpdate?: (words: Word[]) => void;
 }
 
 interface SortOption {
@@ -30,7 +30,7 @@ const SORT_OPTIONS: SortOption[] = [
   { key: 'id', label: 'Newest' },
 ];
 
-export function WordGrid({ initialWords = [], onOpenModal }: WordGridProps) {
+export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
   const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
   
   // State
@@ -120,8 +120,15 @@ export function WordGrid({ initialWords = [], onOpenModal }: WordGridProps) {
       const wordArray = Array.isArray(words) ? words : [];
       return transformSearchResults(wordArray);
     }
-    return paginatedData?.words || initialWords;
-  }, [isSearchMode, searchData, paginatedData, initialWords, transformSearchResults]);
+    return paginatedData?.words || [];
+  }, [isSearchMode, searchData, paginatedData, transformSearchResults]);
+
+  // Call onWordsUpdate whenever currentWords changes
+  useEffect(() => {
+    if (onWordsUpdate) {
+      onWordsUpdate(currentWords);
+    }
+  }, [currentWords, onWordsUpdate]);
 
   // Determine loading state
   const isLoading = useMemo(() => {

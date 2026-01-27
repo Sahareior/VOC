@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, memo, useState } from 'react';
+import React, { useCallback, memo, useState, useEffect } from 'react';
 import { 
   Volume2, 
   Heart, 
@@ -11,7 +11,9 @@ import {
   BookOpen,
   Sparkles,
   Image as ImageIcon,
-  X
+  X,
+  Pause,
+  RotateCcw
 } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { Badge } from '@/components/ui/Badge';
@@ -27,8 +29,8 @@ interface WordModalProps {
   onClose: () => void;
   onToggleFavorite: (wordId: string) => void;
   onToggleLearned: (wordId: string) => void;
-  onNext?: () => void;
-  onPrevious?: () => void;
+  onNext?: (index: number) => void;
+  onPrevious?: (index: number) => void;
   currentIndex?: number | null;
   totalWords?: number;
 }
@@ -48,30 +50,128 @@ export const WordModal = memo(function WordModal({
 }: WordModalProps) {
   const { speak } = useVoice();
   const [isSpeakingAll, setIsSpeakingAll] = useState(false);
-
-  console.log(word)
+  const [isPaused, setIsPaused] = useState(false);
+  const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null);
+  const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
 
   const handlePronounceAll = useCallback(async () => {
     if (!word) return;
     
     setIsSpeakingAll(true);
+    setIsPaused(false);
     
-    // Pronounce the word
-    speak(word.name || word.term || '');
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
     
-    // Add a small delay between each section
-    setTimeout(() => {
-
-      
-      setTimeout(() => {
-        if (word.sentence) {
-          speak(`Example: ${word.sentence}`);
-        }
+    // Create utterances for each part
+    const parts: string[] = [];
+    
+    // Add word
+    if (word.name || word.term) {
+      parts.push(word.name || word.term || '');
+    }
+    
+    // Add definition
+    if (word.definition) {
+      parts.push(word.definition);
+    }
+    
+    // Add example
+    if (word.sentence) {
+      parts.push(`Example: ${word.sentence}`);
+    }
+    
+    // Speak all parts with delays
+    let currentPartIndex = 0;
+    
+    const speakNextPart = () => {
+      if (currentPartIndex >= parts.length) {
         setIsSpeakingAll(false);
-      }, word.definition ?0 : 0);
-    }, 2000);
-  }, [word, speak]);
+        setIsPaused(false);
+        setCurrentUtterance(null);
+        
+        // Auto-advance to next word after completion
+        if (onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1) {
+          setTimeout(() => {
+            setShouldAutoPlay(true); // Set flag to auto-play next word
+            onNext(currentIndex);
+          }, 500);
+        }
+        return;
+      }
+      
+      const utterance = new SpeechSynthesisUtterance(parts[currentPartIndex]);
+      utterance.rate = 0.9;
+      utterance.pitch = 1;
+      
+      utterance.onend = () => {
+        currentPartIndex++;
+        setTimeout(speakNextPart, 800); // Delay between parts
+      };
+      
+      utterance.onerror = () => {
+        setIsSpeakingAll(false);
+        setIsPaused(false);
+        setCurrentUtterance(null);
+      };
+      
+      setCurrentUtterance(utterance);
+      window.speechSynthesis.speak(utterance);
+    };
+    
+    speakNextPart();
+  }, [word, speak, onNext, currentIndex, totalWords]);
 
+  // Cleanup on unmount or word change
+  useEffect(() => {
+    // If shouldAutoPlay is true, start speaking the new word after a brief delay
+    if (shouldAutoPlay && word) {
+      const timer = setTimeout(() => {
+        handlePronounceAll();
+        setShouldAutoPlay(false);
+      }, 300);
+      
+      return () => {
+        clearTimeout(timer);
+      };
+    } else {
+      // Only cancel speech if we're not auto-playing
+      window.speechSynthesis.cancel();
+      setIsSpeakingAll(false);
+      setIsPaused(false);
+      setCurrentUtterance(null);
+    }
+    
+    return () => {
+      window.speechSynthesis.cancel();
+      setIsSpeakingAll(false);
+      setIsPaused(false);
+      setCurrentUtterance(null);
+    };
+  }, [word?.id, shouldAutoPlay, handlePronounceAll]);
+
+  const handlePause = useCallback(() => {
+    if (window.speechSynthesis.speaking && !isPaused) {
+      window.speechSynthesis.pause();
+      setIsPaused(true);
+    } else if (isPaused) {
+      window.speechSynthesis.resume();
+      setIsPaused(false);
+    }
+  }, [isPaused]);
+
+  const handleRepeat = useCallback(() => {
+    // Cancel current speech and restart
+    window.speechSynthesis.cancel();
+    setIsSpeakingAll(false);
+    setIsPaused(false);
+    setCurrentUtterance(null);
+    
+    // Restart after a brief delay
+    setTimeout(() => {
+      handlePronounceAll();
+    }, 100);
+  }, [handlePronounceAll]);
 
   const handlePronounceDefinition = useCallback(() => {
     if (word?.definition) {
@@ -85,15 +185,21 @@ export const WordModal = memo(function WordModal({
     }
   }, [word, speak]);
 
+  // FIXED: Convert numeric ID to string
   const handleToggleFavorite = useCallback(() => {
-    word?.id && onToggleFavorite(word.id.toString());
+    if (word?.id) {
+      const wordId = typeof word.id === 'number' ? word.id.toString() : word.id;
+      onToggleFavorite(wordId);
+    }
   }, [word, onToggleFavorite]);
 
+  // FIXED: Convert numeric ID to string
   const handleToggleLearned = useCallback(() => {
-    word?.id && onToggleLearned(word.id.toString());
+    if (word?.id) {
+      const wordId = typeof word.id === 'number' ? word.id.toString() : word.id;
+      onToggleLearned(wordId);
+    }
   }, [word, onToggleLearned]);
-
-
 
   if (!word) return null;
 
@@ -106,8 +212,9 @@ export const WordModal = memo(function WordModal({
       closeOnEscape
       className="overflow-hidden"
     >
-      {/* Main Content */}
-      <div className="flex w-full flex-col h-[80vh] overflow-hidden">
+      <div 
+        className="flex w-full flex-col h-[80vh] overflow-hidden"
+      >
         {/* Header with Close and Stats */}
         <div className="flex items-center justify-between p-1 pb-0">
           <div className="flex items-center gap-4">
@@ -119,11 +226,11 @@ export const WordModal = memo(function WordModal({
               <X className="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
             </button>
             
-            {currentIndex && totalWords && (
+            {currentIndex !== null && totalWords && (
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-slate-400" />
                 <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  Word {currentIndex} of {totalWords}
+                  Word {currentIndex + 1} of {totalWords}
                 </span>
               </div>
             )}
@@ -186,26 +293,69 @@ export const WordModal = memo(function WordModal({
                   )}
                 </div>
 
-                <button
-                  onClick={handlePronounceAll}
-                  className={cn(
-                    'relative p-3 rounded-xl transition-all duration-200',
-                    'bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30',
-                    'text-primary-600 dark:text-primary-400 hover:scale-105 active:scale-95',
-                    'shadow-sm hover:shadow-md',
-                    'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900'
-                  )}
-                  aria-label="Pronounce word, definition, and example"
-                  disabled={isSpeakingAll}
-                >
-                  <Volume2 className={cn(
-                    "w-6 h-6",
-                    isSpeakingAll && "animate-pulse"
-                  )} />
+                {/* Voice Control Group */}
+                <div className="flex items-center gap-2">
+                  {/* Main Voice Button */}
+                  <button
+                    onClick={handlePronounceAll}
+                    className={cn(
+                      'relative p-3 rounded-xl transition-all duration-200',
+                      'bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30',
+                      'text-primary-600 dark:text-primary-400 hover:scale-105 active:scale-95',
+                      'shadow-sm hover:shadow-md',
+                      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900'
+                    )}
+                    aria-label="Pronounce word, definition, and example"
+                    disabled={isSpeakingAll}
+                  >
+                    <Volume2 className={cn(
+                      "w-6 h-6",
+                      isSpeakingAll && "animate-pulse"
+                    )} />
+                    {isSpeakingAll && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full animate-ping" />
+                    )}
+                  </button>
+
+                  {/* Pause Button - Only visible when speaking */}
                   {isSpeakingAll && (
-                    <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full animate-ping" />
+                    <button
+                      onClick={handlePause}
+                      className={cn(
+                        'p-3 rounded-xl transition-all duration-200',
+                        'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30',
+                        'text-amber-600 dark:text-amber-400 hover:scale-105 active:scale-95',
+                        'shadow-sm hover:shadow-md',
+                        'focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900',
+                        'animate-in slide-in-from-right-5 duration-300'
+                      )}
+                      aria-label={isPaused ? "Resume" : "Pause"}
+                    >
+                      <Pause className={cn(
+                        "w-5 h-5",
+                        isPaused && "fill-current"
+                      )} />
+                    </button>
                   )}
-                </button>
+
+                  {/* Repeat Button - Only visible when speaking */}
+                  {isSpeakingAll && (
+                    <button
+                      onClick={handleRepeat}
+                      className={cn(
+                        'p-3 rounded-xl transition-all duration-200',
+                        'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30',
+                        'text-emerald-600 dark:text-emerald-400 hover:scale-105 active:scale-95',
+                        'shadow-sm hover:shadow-md',
+                        'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900',
+                        'animate-in slide-in-from-right-5 duration-300 delay-75'
+                      )}
+                      aria-label="Repeat from beginning"
+                    >
+                      <RotateCcw className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -223,7 +373,7 @@ export const WordModal = memo(function WordModal({
                     target.parentElement!.innerHTML = `
                       <div class="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
                         <div class="text-center">
-                          <ImageIcon class="w-12 h-12 mx-auto mb-2 text-slate-400" />
+                          <div class="w-12 h-12 mx-auto mb-2 text-slate-400">${ImageIcon}</div>
                           <p class="text-slate-500 dark:text-slate-400">Image not available</p>
                         </div>
                       </div>
@@ -233,9 +383,17 @@ export const WordModal = memo(function WordModal({
                 
                 {/* Carousel Navigation Overlay */}
                 <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  {onPrevious && (
+                  {onPrevious && currentIndex !== null && currentIndex > 0 && (
                     <button
-                      onClick={onPrevious}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Cancel speech before navigating
+                        window.speechSynthesis.cancel();
+                        setIsSpeakingAll(false);
+                        setIsPaused(false);
+                        setCurrentUtterance(null);
+                        onPrevious(currentIndex);
+                      }}
                       className="p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white dark:hover:bg-slate-800"
                       aria-label="Previous word"
                     >
@@ -243,16 +401,31 @@ export const WordModal = memo(function WordModal({
                     </button>
                   )}
                   
-                  {onNext && (
+                  {onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1 && (
                     <button
-                      onClick={onNext}
-                      className="p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white dark:hover:bg-slate-800"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Cancel speech before navigating
+                        window.speechSynthesis.cancel();
+                        setIsSpeakingAll(false);
+                        setIsPaused(false);
+                        setCurrentUtterance(null);
+                        onNext(currentIndex);
+                      }}
+                      className="p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white dark:hover:bg-slate-800 ml-auto"
                       aria-label="Next word"
                     >
                       <ChevronRight className="w-6 h-6 text-slate-600 dark:text-slate-300" />
                     </button>
                   )}
                 </div>
+
+                {/* Navigation indicator */}
+                {(onPrevious || onNext) && (
+                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
+                    Use ← → keys or click arrows
+                  </div>
+                )}
               </div>
             )}
 
@@ -362,8 +535,38 @@ export const WordModal = memo(function WordModal({
               </div>
             )}
 
-            {/* Share Button */}
-
+            {/* Bottom Navigation for non-image view */}
+            {(onPrevious || onNext) && !word.image && currentIndex !== null && (
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700">
+                {onPrevious && currentIndex > 0 ? (
+                  <button
+                    onClick={() => onPrevious(currentIndex)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                    <span>Previous</span>
+                  </button>
+                ) : (
+                  <div />
+                )}
+                
+                <div className="text-sm text-slate-500 dark:text-slate-400">
+                  {currentIndex !== null && totalWords ? `Word ${currentIndex + 1} of ${totalWords}` : 'Navigation'}
+                </div>
+                
+                {onNext && currentIndex < (totalWords || 0) - 1 ? (
+                  <button
+                    onClick={() => onNext(currentIndex)}
+                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    <span>Next</span>
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <div />
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
