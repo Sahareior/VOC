@@ -219,7 +219,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
             placeholder="Search words, definitions, or synonyms..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-[70%] pl-10 pr-10 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent will-change-transform"
+            className="md:w-[70%] w-full pl-10 pr-10 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent will-change-transform"
             aria-label="Search words"
           />
           {searchQuery && (

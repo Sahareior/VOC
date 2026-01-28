@@ -41,8 +41,8 @@ export function Header({ onOpenHelp }) {
               href="/"
               className="flex items-center gap-2 text-[#F4C1C4] dark:text-primary-400 hover:opacity-80 transition-opacity"
             >
-              <BookOpen className="w-8 h-8" />
-              <span className="text-xl font-bold hidden sm:inline-block">
+              <BookOpen className="w-8 h-8 sm:inline-block hidden" />
+              <span className="text-xl font-bold  sm:inline-block">
                <Image
   src={logo}
   alt="Logo"

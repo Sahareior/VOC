@@ -1,4 +1,4 @@
 {
-  "/page": "app/page.js",
-  "/(navbar_routes)/groups/[id]/page": "app/(navbar_routes)/groups/[id]/page.js"
+  "/(navbar_routes)/groups/[id]/page": "app/(navbar_routes)/groups/[id]/page.js",
+  "/page": "app/page.js"
 }
