@@ -165,7 +165,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
   }, [currentPage]);
 
   const handlePagination = () => {
-    setCurrentPage(prev => prev + 20);
+    setCurrentPage(prev => prev + 1);
   };
 
   if (isLoading && currentPage === 1 && !isSearchMode) {
