@@ -25,7 +25,7 @@ export default function Groups() {
   const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
   const { theme } = useTheme();
   const router = useRouter();
-  const { data: groupsData, isLoading, error } = useGetGroupsQuery();
+  const { data: groupsData, isLoading, error } = useGetGroupsQuery(undefined);
 
   // Initialize expanded categories when data is loaded
   useEffect(() => {

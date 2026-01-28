@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { WordCard } from './WordCard';
 import { Button } from '@/components/ui/Button';
@@ -13,7 +13,7 @@ import { useGetWordsQuery, useLazyGetSearchWordsQuery } from '@/redux/slices/api
 type SortType = 'id' | 'az' | 'za' | 'random';
 
 interface WordGridProps {
-  onOpenModal: (word: Word) => void;
+  onOpenModal?: (word: Word) => void;
   onWordsUpdate?: (words: Word[]) => void;
 }
 
@@ -32,16 +32,16 @@ const SORT_OPTIONS: SortOption[] = [
 
 export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
   const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
-  
+  const gridContainerRef = useRef<HTMLDivElement>(null);
   // State
   const [activeSort, setActiveSort] = useState<SortType>('id');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage] = useState(20);
   const [hasPaginated, setHasPaginated] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
 
-  // RTK Query hooks
+
   const { 
     data: paginatedData, 
     isLoading: isLoadingPaginated, 
@@ -49,13 +49,13 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     refetch 
   } = useGetWordsQuery({
     offset: (currentPage - 1) * itemsPerPage,
-    limit: itemsPerPage,
+    limit: 20,
     sort: activeSort,
   }, {
-    skip: isSearchMode, // Skip this query when in search mode
+    skip: isSearchMode, 
   });
 
-  // Lazy search query
+
   const [
     triggerSearch, 
     { 
@@ -65,7 +65,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     }
   ] = useLazyGetSearchWordsQuery();
 
-  // Handle search with debounce
+
   useEffect(() => {
     const timer = setTimeout(() => {
       if (searchQuery.trim()) {
@@ -75,12 +75,12 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
         setIsSearchMode(false);
         setCurrentPage(1);
       }
-    }, 300); // 300ms debounce
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [searchQuery, triggerSearch]);
 
-  // Transform search results with dummy data
+ 
   const transformSearchResults = useCallback((results: any[]): Word[] => {
     if (!Array.isArray(results)) return [];
     
@@ -112,25 +112,25 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     })) as any;
   }, []);
 
-  // Determine which data to use
+
   const currentWords = useMemo(() => {
     if (isSearchMode && searchData) {
-      // Handle different response formats
-      const words = searchData?.words || searchData?.data || searchData;
+
+      const words = searchData?.words ||  searchData;
       const wordArray = Array.isArray(words) ? words : [];
       return transformSearchResults(wordArray);
     }
     return paginatedData?.words || [];
   }, [isSearchMode, searchData, paginatedData, transformSearchResults]);
 
-  // Call onWordsUpdate whenever currentWords changes
+  
   useEffect(() => {
     if (onWordsUpdate) {
       onWordsUpdate(currentWords);
     }
   }, [currentWords, onWordsUpdate]);
 
-  // Determine loading state
+
   const isLoading = useMemo(() => {
     if (isSearchMode) {
       return isSearchLoading || isSearchFetching;
@@ -138,7 +138,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     return isLoadingPaginated;
   }, [isSearchMode, isSearchLoading, isSearchFetching, isLoadingPaginated]);
 
-  // Total items calculation
+
   const totalItems = useMemo(() => {
     if (isSearchMode) {
       return searchData?.total || currentWords.length;
@@ -146,16 +146,16 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     return paginatedData?.total || 0;
   }, [isSearchMode, searchData, paginatedData, currentWords.length]);
 
-  // Total pages calculation
+  
   const totalPages = useMemo(() => {
     if (isSearchMode) {
-      // For search results, show all items on one page
+    
       return 1;
     }
     return Math.ceil(totalItems / itemsPerPage);
   }, [isSearchMode, totalItems, itemsPerPage]);
 
-  // Handle sort change
+
   const handleSortChange = useCallback((sortType: SortType) => {
     setActiveSort(sortType);
     setCurrentPage(1);
@@ -166,16 +166,10 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     }
   }, [isSearchMode]);
 
-  // Handle page change
-  const handlePageChange = useCallback((page: number) => {
-    if (page !== currentPage) {
-      setHasPaginated(true);
-    }
-    setCurrentPage(page);
-    setIsSearchMode(false); // Leave search mode when paginating
-  }, [currentPage]);
 
-  // Handle search change
+
+
+
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
@@ -185,61 +179,32 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     }
   }, []);
 
-  // Clear search
+
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
     setIsSearchMode(false);
     setCurrentPage(1);
   }, []);
 
-  // Scroll to top helper
-  const scrollToTop = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
 
-  // Scroll to top when page changes
-  useEffect(() => {
-    if (hasPaginated) {
-      scrollToTop();
-    }
-  }, [currentPage, hasPaginated, scrollToTop]);
 
-  // Render page numbers
-  const renderPageNumbers = () => {
-    if (isSearchMode) return null; // No pagination in search mode
 
-    const pages: JSX.Element[] = [];
-    const maxVisiblePages = 5;
+ 
+useEffect(() => {
+  if (currentPage > 1 && gridContainerRef.current) {
+    // Scroll to the grid container instead of top of page
+    gridContainerRef.current.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'start' 
+    });
+  }
+}, [currentPage]);
 
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+const handlePagination = () => {
+  setCurrentPage(prev => prev + 20);
+};
 
-    if (endPage - startPage + 1 < maxVisiblePages) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
-        <button
-          key={i}
-          onClick={() => handlePageChange(i)}
-          className={cn(
-            'min-w-[40px] px-3 py-1.5 rounded-md text-sm font-medium transition-all duration-200',
-            currentPage === i
-              ? 'bg-orange-500 text-white shadow-md'
-              : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105'
-          )}
-          aria-label={`Go to page ${i}`}
-        >
-          {i}
-        </button>
-      );
-    }
-
-    return pages;
-  };
-
-  // Loading state
+  
   if (isLoading && currentPage === 1 && !isSearchMode) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -251,7 +216,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     );
   }
 
-  // Error state
+
   if (error) {
     return (
       <div className="text-center py-16">
@@ -273,8 +238,10 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
     );
   }
 
+
+
   return (
-    <div className="space-y-6">
+    <div ref={gridContainerRef} className="space-y-6">
       {/* Search + Sort Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         {/* Search Input */}
@@ -345,8 +312,8 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
               <WordCard
                 key={`${word.id}-${currentPage}-${isSearchMode ? 'search' : 'normal'}`}
                 word={word}
-                isLearned={isLearned(word.id)}
-                isFavorite={isFavorite(word.id)}
+                isLearned={isLearned(String(word.id))}
+                isFavorite={isFavorite(String(word.id))}
                 onOpenModal={onOpenModal}
                 onToggleFavorite={toggleFavorite}
                 onToggleLearned={toggleLearned}
@@ -355,53 +322,26 @@ export function WordGrid({ onOpenModal, onWordsUpdate }: WordGridProps) {
           </div>
 
           {/* Pagination Controls - Only show when not in search mode */}
-          {!isSearchMode && totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200 dark:border-slate-700">
-              <div className="text-sm text-slate-500 dark:text-slate-400">
-                Page {currentPage} of {totalPages} • {totalItems} total items
-              </div>
+  <div className='flex justify-center items-center'>
+    <button
+  onClick={handlePagination}
+  className="
+    mx-auto flex items-center justify-center
+    px-6 py-2
+    rounded-xl
+    bg-purple-500 text-white
+    font-medium
+    shadow-md
+    transition-all duration-200
+    hover:bg-red-600 hover:shadow-lg hover:-translate-y-0.5
+    active:translate-y-0
+    disabled:opacity-50 disabled:cursor-not-allowed
+  "
+>
+  Load more
+</button>
 
-              <div className="flex items-center gap-2">
-                {/* Previous Button */}
-                <button
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1 || isLoading}
-                  className={cn(
-                    'p-2 rounded-md transition-all duration-200',
-                    currentPage === 1 || isLoading
-                      ? 'opacity-50 cursor-not-allowed text-slate-400'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:scale-105'
-                  )}
-                  aria-label="Previous page"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-
-                {/* Page Numbers */}
-                <div className="flex gap-1">{renderPageNumbers()}</div>
-
-                {/* Next Button */}
-                <button
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === totalPages || isLoading}
-                  className={cn(
-                    'p-2 rounded-md transition-all duration-200',
-                    currentPage === totalPages || isLoading
-                      ? 'opacity-50 cursor-not-allowed text-slate-400'
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 hover:scale-105'
-                  )}
-                  aria-label="Next page"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Items Per Page Info */}
-              <div className="text-sm text-slate-500 dark:text-slate-400">
-                Showing {Math.min(itemsPerPage, currentWords.length)} per page
-              </div>
-            </div>
-          )}
+  </div>
         </>
       ) : (
         /* Empty State */

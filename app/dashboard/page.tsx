@@ -9,29 +9,46 @@ import { Button } from '@/components/ui/Button';
 import { WordModal } from '@/components/features/WordModal';
 import { SAMPLE_WORDS } from '@/lib/data';
 import { useUser } from '@/contexts/UserContext';
-import { Word, WordCategory } from '@/types';
 import { cn, formatDate } from '@/lib/utils';
 import { CATEGORY_CONFIGS } from '@/types';
+import Image from 'next/image';
+
+export type WordCategory = 'noun' | 'verb' | 'adjective' | 'adverb' | 'preposition';
+export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
+
+export interface Word1 {
+  id: string;
+  term: string;
+  phonetic: string;
+  definition: string;
+  example: string;
+  category: WordCategory;
+  difficulty: DifficultyLevel;
+  imageUrl: string;
+  synonyms: string[];
+  antonyms: string[];
+  createdAt: string;
+}
 
 type TabType = 'learned' | 'favorites';
 
 export default function DashboardPage() {
   const { learnedWords, favorites, stats, toggleLearned, toggleFavorite, isLearned, isFavorite, resetProgress } = useUser();
   const [activeTab, setActiveTab] = useState<TabType>('learned');
-  const [selectedWord, setSelectedWord] = useState<Word | null>(null);
+  const [selectedWord, setSelectedWord] = useState<Word1 | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Get word objects from IDs
   const learnedWordObjects = useMemo(() => {
-    return SAMPLE_WORDS.filter(word => learnedWords.includes(word.id));
+    return SAMPLE_WORDS.filter(word => learnedWords.includes(String(word.id)))
   }, [learnedWords]);
 
   const favoriteWordObjects = useMemo(() => {
-    return SAMPLE_WORDS.filter(word => favorites.includes(word.id));
-  }, [favorites]);
+      return SAMPLE_WORDS.filter(word => favorites.includes(String(word.id)));
+    }, [favorites]);
 
   // Handle word click
-  const handleWordClick = (word: Word) => {
+  const handleWordClick = (word: Word1) => {
     setSelectedWord(word);
     setIsModalOpen(true);
   };
@@ -43,7 +60,7 @@ export default function DashboardPage() {
   };
 
   // Handle AI ask
-  const handleAskAI = (word: Word) => {
+  const handleAskAI = (word: Word1) => {
     setIsModalOpen(false);
     // The AI widget will show with context
   };
@@ -127,8 +144,6 @@ export default function DashboardPage() {
             </div>
           </Card>
 
-
-
           <Card className="p-6">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -143,9 +158,6 @@ export default function DashboardPage() {
             </div>
           </Card>
         </div>
-
-        {/* Progress Card */}
-
 
         {/* Tabs */}
         <div className="flex gap-2 justify-between md:justify-start mb-6 border-b border-slate-200 dark:border-slate-700">
@@ -245,9 +257,9 @@ export default function DashboardPage() {
         isLearned={selectedWord ? isLearned(selectedWord.id) : false}
         isFavorite={selectedWord ? isFavorite(selectedWord.id) : false}
         onClose={handleCloseModal}
-        onToggleFavorite={toggleFavorite}
-        onToggleLearned={toggleLearned}
-        onAskAI={handleAskAI}
+        onToggleFavorite={(wordId: string) => toggleFavorite(wordId)}
+        onToggleLearned={(wordId: string) => toggleLearned(wordId)}
+        onAskAI={selectedWord ? () => handleAskAI(selectedWord) : undefined}
       />
     </div>
   );
@@ -256,17 +268,19 @@ export default function DashboardPage() {
 /**
  * Dashboard word list item component
  */
+interface DashboardWordItemProps {
+  word: Word1;
+  isFavorite: boolean;
+  onClick: () => void;
+  onToggleFavorite: () => void;
+}
+
 function DashboardWordItem({
   word,
   isFavorite,
   onClick,
   onToggleFavorite,
-}: {
-  word: Word;
-  isFavorite: boolean;
-  onClick: () => void;
-  onToggleFavorite: () => void;
-}) {
+}: DashboardWordItemProps) {
   const categoryConfig = CATEGORY_CONFIGS[word.category];
 
   return (
@@ -276,9 +290,11 @@ function DashboardWordItem({
     >
       {/* Word preview image */}
       <div className="w-16 h-16 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 flex-shrink-0">
-        <img
+        <Image
           src={word.imageUrl}
           alt=""
+          width={64}
+          height={64}
           className="w-full h-full object-cover"
         />
       </div>
@@ -324,17 +340,19 @@ function DashboardWordItem({
 /**
  * Empty state component
  */
+interface EmptyStateProps {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}
+
 function EmptyState({
   icon,
   title,
   description,
   action,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  action?: React.ReactNode;
-}) {
+}: EmptyStateProps) {
   return (
     <div className="text-center py-16">
       <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400">

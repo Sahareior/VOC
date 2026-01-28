@@ -10,6 +10,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next/bundle-analyzer": "^16.1.6",
     "@reduxjs/toolkit": "^2.11.2",
     "@speechly/react-client": "^2.2.4",
     "clsx": "^2.1.1",
@@ -18,6 +19,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-redux": "^9.2.0",
+    "react-window": "^2.2.5",
     "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {

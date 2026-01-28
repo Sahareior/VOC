@@ -1,3 +1,4 @@
+import { Word } from '@/types';
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 type GetWordsParams = {
@@ -6,16 +7,19 @@ type GetWordsParams = {
   sort?: 'id' | 'az' | 'za' | 'random' | 'newest' | 'difficulty';
 };
 
-type SearchParams = {
-    text: string
-}
+type WordsResponse = {
+  offset: number;
+  limit: number;
+  sort: string;
+  total?: number;
+  words: Word[];
+};
 
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
     baseUrl: 'https://new.eflip.com/',
     prepareHeaders: (headers) => {
-      // ⚠️ This runs only on client components
       const token =
         typeof window !== 'undefined'
           ? localStorage.getItem('token')
@@ -29,25 +33,31 @@ export const api = createApi({
   }),
 
   endpoints: (builder) => ({
-    getWords: builder.query<any[], GetWordsParams >({
-      query: (params = {}) => ({
-        url: '/words',
-        params: {
-          offset: params.offset ?? 0,
-          limit: params.limit ?? 20,
-          sort: params.sort ?? 'id',
-        },
+    // ✅ FIXED
+    getWords: builder.query<WordsResponse, GetWordsParams>({
+      query: ({ offset = 0, limit = 20, sort = 'id' }) => ({
+        url: 'words',
+        params: { offset, limit, sort },
       }),
     }),
 
-    getSearchWords: builder.query<any, string >({
-        query: (text) => `words/search?q=${text}`
+    // ✅ FIXED
+    getSearchWords: builder.query<WordsResponse, string>({
+      query: (text) => ({
+        url: 'words/search',
+        params: { q: text },
+      }),
     }),
 
-    getGroups: builder.query({
-      query: ()=> 'groups/'
-    })
+    getGroups: builder.query<any, void>({
+      query: () => 'groups/',
+    }),
   }),
 });
 
-export const { useGetWordsQuery,useGetSearchWordsQuery,useLazyGetSearchWordsQuery,useGetGroupsQuery } = api;
+export const {
+  useGetWordsQuery,
+  useGetSearchWordsQuery,
+  useLazyGetSearchWordsQuery,
+  useGetGroupsQuery,
+} = api;

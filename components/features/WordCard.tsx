@@ -76,9 +76,9 @@ interface WordCardProps {
   word: Word;
   isLearned: boolean;
   isFavorite: boolean;
-  onOpenModal: (word: Word) => void;
-  onToggleFavorite: (wordId: number) => void;
-  onToggleLearned: (wordId: number) => void;
+  onOpenModal: (word: Word) => void | undefined;
+  onToggleFavorite: (wordId: number) => void | undefined;
+  onToggleLearned: (wordId: number) => void | undefined;
 }
 
 export const WordCard: React.FC<WordCardProps> = ({

@@ -5,7 +5,32 @@ export type DifficultyLevel = 'beginner' | 'intermediate' | 'advanced';
 
 export type SortType = 'random' | 'az' | 'newest' | 'difficulty';
 
+// types/word.ts
 export interface Word {
+  id: number;
+  name: string;
+  slug: string;
+  sentence: string;
+  definition: string;
+  type: 'noun' | 'verb' | 'adjective' | 'adverb';
+
+  image: string;
+
+  category: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+
+  subcategory: {
+    id: number;
+    name: string;
+    slug: string;
+  };
+}
+
+
+export interface Word1 {
   id: string;
   term: string;
   phonetic: string;
@@ -18,6 +43,8 @@ export interface Word {
   antonyms: string[];
   createdAt: string
 }
+
+
 
 // User progress types
 export interface UserStats {

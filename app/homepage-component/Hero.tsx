@@ -8,22 +8,14 @@ const Hero = () => {
   const { isLearned } = useUser();
   const [isAnimating, setIsAnimating] = useState(false);
   const { theme } = useTheme();
-  const stats = {
-    totalWords: SAMPLE_WORDS.length,
-    learnedCount: SAMPLE_WORDS.filter(w => isLearned(w.id)).length,
-    progress: Math.round((SAMPLE_WORDS.filter(w => isLearned(w.id)).length / SAMPLE_WORDS.length) * 100),
-  };
 
-  useEffect(() => {
-    setIsAnimating(true);
-    const timer = setTimeout(() => setIsAnimating(false), 1000);
-    return () => clearTimeout(timer);
-  }, [stats.learnedCount]);
+
+
 
   return (
-    <div className={`relative min-h-screen py-16 pb-36 flex items-center overflow-hidden ${theme === 'light' ? 'bg-gradient-to-br from-slate-50 via-purple-50 to-slate-100' : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-950'}`}>
+    <div className={`relative min-h-screen py-16 pb-36 flex items-center overflow-hidden ${theme === 'light' ? 'bg-gradient-to-br from-rose-50 via-red-50 to-orange-50' : 'bg-gradient-to-br from-slate-900 via-red-950 to-slate-950'}`}>
       {/* Elegant Animated Background */}
-      <div className={`absolute inset-0 ${theme === 'light' ? 'bg-gradient-to-br from-slate-50 via-purple-50 to-slate-100' : 'bg-gradient-to-br from-slate-900 via-purple-900 to-slate-950'}`}>
+      <div className={`absolute inset-0 ${theme === 'light' ? 'bg-gradient-to-br from-rose-50 via-red-50 to-orange-50' : 'bg-gradient-to-br from-slate-900 via-red-950 to-slate-950'}`}>
         {/* Subtle Grid */}
         <div 
           className="absolute inset-0"
@@ -39,16 +31,16 @@ const Hero = () => {
         />
         
         {/* Floating Abstract Shapes */}
-        <div className={`absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl animate-pulse ${theme === 'light' ? 'bg-gradient-to-r from-purple-400/20 to-pink-400/20' : 'bg-gradient-to-r from-purple-600/20 to-pink-600/20'}`} />
-        <div className={`absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl animate-pulse delay-1000 ${theme === 'light' ? 'bg-gradient-to-r from-blue-400/10 to-cyan-400/10' : 'bg-gradient-to-r from-blue-600/10 to-cyan-600/10'}`} />
-        <div className={`absolute top-1/2 left-1/3 w-64 h-64 rounded-full blur-3xl animate-pulse delay-500 ${theme === 'light' ? 'bg-gradient-to-r from-violet-400/15 to-purple-400/15' : 'bg-gradient-to-r from-violet-600/15 to-purple-600/15'}`} />
+        <div className={`absolute top-20 left-10 w-72 h-72 rounded-full blur-3xl animate-pulse ${theme === 'light' ? 'bg-gradient-to-r from-red-400/20 to-rose-400/20' : 'bg-gradient-to-r from-red-600/20 to-rose-600/20'}`} />
+        <div className={`absolute bottom-20 right-10 w-96 h-96 rounded-full blur-3xl animate-pulse delay-1000 ${theme === 'light' ? 'bg-gradient-to-r from-orange-400/10 to-amber-400/10' : 'bg-gradient-to-r from-orange-600/10 to-amber-600/10'}`} />
+        <div className={`absolute top-1/2 left-1/3 w-64 h-64 rounded-full blur-3xl animate-pulse delay-500 ${theme === 'light' ? 'bg-gradient-to-r from-rose-400/15 to-pink-400/15' : 'bg-gradient-to-r from-rose-600/15 to-pink-600/15'}`} />
         
         {/* Animated Particles */}
         <div className="absolute inset-0">
           {Array.from({ length: 30 }).map((_, i) => (
             <div
               key={i}
-              className={`absolute w-[1px] h-[1px] rounded-full animate-float ${theme === 'light' ? 'bg-gray-800/30' : 'bg-white/30'}`}
+              className={`absolute w-[1px] h-[1px] rounded-full animate-float ${theme === 'light' ? 'bg-red-800/30' : 'bg-red-300/30'}`}
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -66,14 +58,14 @@ const Hero = () => {
           {/* Elegant Badge */}
           <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full border backdrop-blur-lg mb-8 group hover:transition-all duration-500 cursor-pointer ${
             theme === 'light' 
-              ? 'bg-white/80 border-gray-200 hover:bg-white hover:border-gray-300' 
+              ? 'bg-white/80 border-red-200 hover:bg-white hover:border-red-300' 
               : 'bg-white/5 border-white/10 hover:bg-white/10'
           }`}>
-            <Sparkles className={`w-4 h-4 animate-pulse ${theme === 'light' ? 'text-purple-500' : 'text-purple-300'}`} />
+            <Sparkles className={`w-4 h-4 animate-pulse ${theme === 'light' ? 'text-red-500' : 'text-red-400'}`} />
             <span className={`text-sm font-medium tracking-wide ${theme === 'light' ? 'text-gray-700' : 'text-white/80'}`}>
               AI-Powered Learning Platform
             </span>
-            <div className={`w-px h-3 mx-2 ${theme === 'light' ? 'bg-gray-300' : 'bg-white/20'}`} />
+            <div className={`w-px h-3 mx-2 ${theme === 'light' ? 'bg-red-300' : 'bg-white/20'}`} />
             <span className={`text-xs transition-colors ${theme === 'light' ? 'text-gray-500 group-hover:text-gray-700' : 'text-white/60 group-hover:text-white/80'}`}>
               Join 10,000+ learners
             </span>
@@ -85,11 +77,11 @@ const Hero = () => {
               Master Vocabulary
               <span className="block mt-2">
                 <span className="relative">
-                  <span className="relative z-10 bg-gradient-to-r from-cyan-500 via-purple-500 to-pink-500 bg-clip-text text-transparent animate-gradient-x">
+                  <span className="relative z-10 bg-gradient-to-r from-red-500 via-rose-500 to-orange-500 bg-clip-text text-transparent animate-gradient-x">
                     Effortlessly
                   </span>
-                  <div className={`absolute -bottom-2 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent animate-pulse ${
-                    theme === 'light' ? 'via-cyan-500/70' : 'via-cyan-400/50'
+                  <div className={`absolute -bottom-2 left-1/4 right-1/4 h-px bg-gradient-to-r from-transparent via-red-500/50 to-transparent animate-pulse ${
+                    theme === 'light' ? 'via-red-500/70' : 'via-red-400/50'
                   }`} />
                 </span>
               </span>
@@ -99,13 +91,13 @@ const Hero = () => {
             <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl">
               <div className={`absolute left-0 top-0 w-32 h-32 rounded-full blur-xl ${
                 theme === 'light' 
-                  ? 'bg-gradient-to-r from-purple-400/10 to-transparent' 
-                  : 'bg-gradient-to-r from-purple-600/10 to-transparent'
+                  ? 'bg-gradient-to-r from-red-400/10 to-transparent' 
+                  : 'bg-gradient-to-r from-red-600/10 to-transparent'
               }`} />
               <div className={`absolute right-0 bottom-0 w-32 h-32 rounded-full blur-xl ${
                 theme === 'light'
-                  ? 'bg-gradient-to-l from-cyan-400/10 to-transparent'
-                  : 'bg-gradient-to-l from-cyan-600/10 to-transparent'
+                  ? 'bg-gradient-to-l from-orange-400/10 to-transparent'
+                  : 'bg-gradient-to-l from-orange-600/10 to-transparent'
               }`} />
             </div>
           </div>
@@ -119,8 +111,8 @@ const Hero = () => {
               <span className={`font-medium ${theme === 'light' ? 'text-gray-800' : 'text-white'}`}>
                 intelligent explanations
               </span>
-              <span className={`absolute -bottom-1 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent ${
-                theme === 'light' ? 'via-cyan-500/70' : 'via-cyan-400/50'
+              <span className={`absolute -bottom-1 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-red-500/50 to-transparent ${
+                theme === 'light' ? 'via-red-500/70' : 'via-red-400/50'
               }`} />
             </span>
             , and accelerate your progress with personalized guidance.
@@ -131,17 +123,17 @@ const Hero = () => {
             {/* Secondary Button */}
             <button className={`group px-10 py-4 bg-transparent font-semibold tracking-wide rounded-xl border transition-all duration-500 backdrop-blur-sm ${
               theme === 'light'
-                ? 'text-gray-700 border-gray-300 hover:border-gray-400 hover:bg-gray-50/50'
-                : 'text-white border-white/20 hover:border-white/40 hover:bg-white/5'
+                ? 'text-gray-700 border-red-300 hover:border-red-400 hover:bg-red-50/50'
+                : 'text-white border-white/20 hover:border-red-400/40 hover:bg-red-900/10'
             }`}>
               <div className="flex items-center justify-center gap-3">
                 <Brain className={`w-5 h-5 group-hover:scale-110 transition-transform duration-300 ${
-                  theme === 'light' ? 'text-gray-700' : 'text-white'
+                  theme === 'light' ? 'text-red-600' : 'text-red-400'
                 }`} />
                 <span className="relative">
                   See How It Works
                   <span className={`absolute -bottom-1 left-0 right-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left ${
-                    theme === 'light' ? 'bg-gray-400' : 'bg-white/20'
+                    theme === 'light' ? 'bg-red-400' : 'bg-red-400/40'
                   }`} />
                 </span>
               </div>
@@ -151,22 +143,22 @@ const Hero = () => {
           {/* Feature Highlights - Minimal */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
             {[
-              { icon: Sparkles, text: 'AI-Powered Insights', color: 'text-cyan-500' },
-              { icon: Target, text: 'Personalized Goals', color: 'text-purple-500' },
-              { icon: Brain, text: 'Smart Learning', color: 'text-pink-500' },
+              { icon: Sparkles, text: 'AI-Powered Insights', color: 'text-red-500' },
+              { icon: Target, text: 'Personalized Goals', color: 'text-rose-500' },
+              { icon: Brain, text: 'Smart Learning', color: 'text-orange-500' },
             ].map((feature, index) => (
               <div
                 key={index}
                 className={`flex items-center gap-3 p-4 rounded-lg backdrop-blur-sm border transition-all duration-500 group ${
                   theme === 'light'
-                    ? 'bg-white/50 border-gray-200 hover:border-gray-300 hover:bg-white/70'
-                    : 'bg-white/5 border-white/5 hover:border-white/10'
+                    ? 'bg-white/50 border-red-200 hover:border-red-300 hover:bg-white/70'
+                    : 'bg-white/5 border-white/5 hover:border-red-900/20'
                 }`}
               >
                 <div className={`p-2 rounded-lg transition-colors group-hover:bg-opacity-20 ${feature.color} ${
                   theme === 'light' 
-                    ? 'bg-gray-100 group-hover:bg-gray-200' 
-                    : 'bg-white/5 group-hover:bg-white/10'
+                    ? 'bg-red-100 group-hover:bg-red-200' 
+                    : 'bg-white/5 group-hover:bg-red-900/20'
                 }`}>
                   <feature.icon className="w-5 h-5" />
                 </div>
@@ -191,8 +183,8 @@ const Hero = () => {
           </span>
           <div className={`w-px h-8 bg-gradient-to-b animate-bounce ${
             theme === 'light' 
-              ? 'from-gray-400 to-transparent' 
-              : 'from-white/40 to-transparent'
+              ? 'from-red-400 to-transparent' 
+              : 'from-red-400/40 to-transparent'
           }`} />
         </div>
       </div>

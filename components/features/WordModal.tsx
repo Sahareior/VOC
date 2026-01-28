@@ -20,11 +20,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Word } from '@/types';
 import { cn } from '@/lib/utils';
 import { useVoice } from '@/contexts/VoiceContext';
+import Image from 'next/image';
 
 interface WordModalProps {
   word: Word | null;
   isOpen: boolean;
-  isLearned: boolean;
+ 
   isFavorite: boolean;
   onClose: () => void;
   onToggleFavorite: (wordId: string) => void;
@@ -38,7 +39,6 @@ interface WordModalProps {
 export const WordModal = memo(function WordModal({
   word,
   isOpen,
-  isLearned,
   isFavorite,
   onClose,
   onToggleFavorite,
@@ -54,42 +54,29 @@ export const WordModal = memo(function WordModal({
   const [currentUtterance, setCurrentUtterance] = useState<SpeechSynthesisUtterance | null>(null);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
 
+
+
   const handlePronounceAll = useCallback(async () => {
     if (!word) return;
-    
     setIsSpeakingAll(true);
     setIsPaused(false);
-    
-    // Cancel any ongoing speech
     window.speechSynthesis.cancel();
-    
-    // Create utterances for each part
     const parts: string[] = [];
-    
-    // Add word
     if (word.name || word.term) {
       parts.push(word.name || word.term || '');
     }
-    
-    // Add definition
     if (word.definition) {
       parts.push(word.definition);
     }
-    
-    // Add example
     if (word.sentence) {
       parts.push(`Example: ${word.sentence}`);
     }
-    
-    // Speak all parts with delays
     let currentPartIndex = 0;
-    
     const speakNextPart = () => {
       if (currentPartIndex >= parts.length) {
         setIsSpeakingAll(false);
         setIsPaused(false);
         setCurrentUtterance(null);
-        
         // Auto-advance to next word after completion
         if (onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1) {
           setTimeout(() => {
@@ -99,49 +86,35 @@ export const WordModal = memo(function WordModal({
         }
         return;
       }
-      
       const utterance = new SpeechSynthesisUtterance(parts[currentPartIndex]);
       utterance.rate = 0.9;
       utterance.pitch = 1;
-      
       utterance.onend = () => {
         currentPartIndex++;
-        setTimeout(speakNextPart, 800); // Delay between parts
+        setTimeout(speakNextPart, 800);
       };
-      
       utterance.onerror = () => {
         setIsSpeakingAll(false);
         setIsPaused(false);
         setCurrentUtterance(null);
       };
-      
       setCurrentUtterance(utterance);
       window.speechSynthesis.speak(utterance);
     };
-    
     speakNextPart();
   }, [word, speak, onNext, currentIndex, totalWords]);
 
   // Cleanup on unmount or word change
+  // Auto-play audio when shouldAutoPlay is set or when navigating to a new word
   useEffect(() => {
-    // If shouldAutoPlay is true, start speaking the new word after a brief delay
     if (shouldAutoPlay && word) {
       const timer = setTimeout(() => {
         handlePronounceAll();
         setShouldAutoPlay(false);
       }, 300);
-      
-      return () => {
-        clearTimeout(timer);
-      };
-    } else {
-      // Only cancel speech if we're not auto-playing
-      window.speechSynthesis.cancel();
-      setIsSpeakingAll(false);
-      setIsPaused(false);
-      setCurrentUtterance(null);
+      return () => clearTimeout(timer);
     }
-    
+    // Only clean up on word change/unmount
     return () => {
       window.speechSynthesis.cancel();
       setIsSpeakingAll(false);
@@ -201,6 +174,9 @@ export const WordModal = memo(function WordModal({
     }
   }, [word, onToggleLearned]);
 
+
+  console.log(word,'this is word')
+
   if (!word) return null;
 
   return (
@@ -216,15 +192,9 @@ export const WordModal = memo(function WordModal({
         className="flex w-full flex-col h-[80vh] overflow-hidden"
       >
         {/* Header with Close and Stats */}
-        <div className="flex items-center justify-between p-1 pb-0">
+        <div className="flex items-center justify-between pr-2 p-1 pb-0">
           <div className="flex items-center gap-4">
-            <button
-              onClick={onClose}
-              className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Close"
-            >
-              <X className="w-5 h-5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" />
-            </button>
+
             
             {currentIndex !== null && totalWords && (
               <div className="flex items-center gap-2">
@@ -254,21 +224,7 @@ export const WordModal = memo(function WordModal({
               )} />
             </button>
             
-            <button
-              onClick={handleToggleLearned}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                isLearned
-                  ? 'text-emerald-500 bg-emerald-50 dark:bg-emerald-900/30'
-                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-              )}
-              aria-label={isLearned ? "Mark as unlearned" : "Mark as learned"}
-            >
-              <CheckCircle className={cn(
-                'w-5 h-5 transition-transform',
-                isLearned && 'fill-current'
-              )} />
-            </button>
+
           </div>
         </div>
 
@@ -279,7 +235,7 @@ export const WordModal = memo(function WordModal({
             <div className="relative">
               <div className="flex items-start justify-between gap-6">
                 <div className="flex-1">
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                  <h1 className="text-4xl font-bold pb-5 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
                     {word.name || word.term}
                   </h1>
                   
@@ -362,24 +318,26 @@ export const WordModal = memo(function WordModal({
             {/* Word Image with Carousel Navigation */}
             {word.image && (
               <div className="relative group aspect-video overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-                <img
-                  src={word.image}
-                  alt={word.name || word.term || 'Word illustration'}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.parentElement!.innerHTML = `
-                      <div class="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <div class="text-center">
-                          <div class="w-12 h-12 mx-auto mb-2 text-slate-400">${ImageIcon}</div>
-                          <p class="text-slate-500 dark:text-slate-400">Image not available</p>
-                        </div>
-                      </div>
-                    `;
-                  }}
-                />
+               <Image
+  src={word.image}
+  alt={word.name || word.term || 'Word illustration'}
+  width={400}  // Add width
+  height={300} // Add height
+  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+  loading="lazy"
+  onError={(e) => {
+    const target = e.target as HTMLImageElement;
+    target.style.display = 'none';
+    target.parentElement!.innerHTML = `
+      <div class="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
+        <div class="text-center">
+          <div class="w-12 h-12 mx-auto mb-2 text-slate-400">${ImageIcon}</div>
+          <p class="text-slate-500 dark:text-slate-400">Image not available</p>
+        </div>
+      </div>
+    `;
+  }}
+/>
                 
                 {/* Carousel Navigation Overlay */}
                 <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
@@ -392,6 +350,7 @@ export const WordModal = memo(function WordModal({
                         setIsSpeakingAll(false);
                         setIsPaused(false);
                         setCurrentUtterance(null);
+                        setShouldAutoPlay(true); // Set flag to auto-play previous word
                         onPrevious(currentIndex);
                       }}
                       className="p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white dark:hover:bg-slate-800"
@@ -410,6 +369,7 @@ export const WordModal = memo(function WordModal({
                         setIsSpeakingAll(false);
                         setIsPaused(false);
                         setCurrentUtterance(null);
+                        setShouldAutoPlay(true); // Set flag to auto-play next word
                         onNext(currentIndex);
                       }}
                       className="p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white dark:hover:bg-slate-800 ml-auto"
@@ -449,24 +409,9 @@ export const WordModal = memo(function WordModal({
                 </Badge>
               )}
               
-              {word.subcategory && (
-                <Badge 
-                  variant="outline"
-                  className="border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300"
-                >
-                  {typeof word.subcategory === 'object' ? word.subcategory.name : word.subcategory}
-                </Badge>
-              )}
+  
               
-              {isLearned && (
-                <Badge 
-                  variant="success"
-                  className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-                >
-                  <CheckCircle className="w-3 h-3 mr-1.5" />
-                  Learned
-                </Badge>
-              )}
+ 
             </div>
 
             {/* Definition Card with Voice Button */}
@@ -540,7 +485,14 @@ export const WordModal = memo(function WordModal({
               <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700">
                 {onPrevious && currentIndex > 0 ? (
                   <button
-                    onClick={() => onPrevious(currentIndex)}
+                    onClick={() => {
+                      window.speechSynthesis.cancel();
+                      setIsSpeakingAll(false);
+                      setIsPaused(false);
+                      setCurrentUtterance(null);
+                      setShouldAutoPlay(true); // Set flag to auto-play previous word
+                      onPrevious(currentIndex);
+                    }}
                     className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   >
                     <ChevronLeft className="w-5 h-5" />
@@ -549,14 +501,19 @@ export const WordModal = memo(function WordModal({
                 ) : (
                   <div />
                 )}
-                
                 <div className="text-sm text-slate-500 dark:text-slate-400">
                   {currentIndex !== null && totalWords ? `Word ${currentIndex + 1} of ${totalWords}` : 'Navigation'}
                 </div>
-                
                 {onNext && currentIndex < (totalWords || 0) - 1 ? (
                   <button
-                    onClick={() => onNext(currentIndex)}
+                    onClick={() => {
+                      window.speechSynthesis.cancel();
+                      setIsSpeakingAll(false);
+                      setIsPaused(false);
+                      setCurrentUtterance(null);
+                      setShouldAutoPlay(true); // Set flag to auto-play next word
+                      onNext(currentIndex);
+                    }}
                     className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
                   >
                     <span>Next</span>
