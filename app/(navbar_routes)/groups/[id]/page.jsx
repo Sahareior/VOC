@@ -1,9 +1,10 @@
 import React from 'react';
+import { WordGrid } from '../../../../components/features/WordGrid';
 
 const IndividualGroup = () => {
   return (
-    <div>
-      <p>Upcoming...</p>
+    <div className='max-w-7xl mx-auto'>
+      <WordGrid />
     </div>
   );
 };

@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Search, X, Loader2 } from 'lucide-react';
+import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { WordCard } from './WordCard';
 
 import { useUser } from '../../contexts/UserContext';
 import { useGetWordsQuery, useLazyGetSearchWordsQuery } from '../../redux/slices/apiSlice';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
+
 
 const SORT_OPTIONS = [
   { key: 'random', label: 'Random' },
@@ -21,18 +22,11 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
   const gridContainerRef = useRef(null);
   const [activeSort, setActiveSort] = useState('id');
   const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
+  const [hasPaginated, setHasPaginated] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
-
-  // Debounce search query
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  const searchTimeoutRef = useRef(null);
 
   const { 
     data: paginatedData, 
@@ -41,10 +35,10 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
     refetch 
   } = useGetWordsQuery({
     offset: (currentPage - 1) * itemsPerPage,
-    limit: itemsPerPage,
+    limit: 20,
     sort: activeSort,
   }, {
-    skip: isSearchMode,
+    skip: isSearchMode, 
   });
 
   const [
@@ -56,16 +50,28 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
     }
   ] = useLazyGetSearchWordsQuery();
 
-  // Trigger search when debounced query changes
+  // Optimized search debounce
   useEffect(() => {
-    if (debouncedSearchQuery.trim()) {
-      setIsSearchMode(true);
-      triggerSearch(debouncedSearchQuery);
-    } else {
-      setIsSearchMode(false);
-      setCurrentPage(1);
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
-  }, [debouncedSearchQuery, triggerSearch]);
+
+    searchTimeoutRef.current = setTimeout(() => {
+      if (searchQuery.trim()) {
+        setIsSearchMode(true);
+        triggerSearch(searchQuery);
+      } else {
+        setIsSearchMode(false);
+        setCurrentPage(1);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, triggerSearch]);
 
   // Memoize transform function with useCallback
   const transformSearchResults = useCallback((results) => {
@@ -99,6 +105,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
     }));
   }, []);
 
+  // Optimize currentWords calculation
   const currentWords = useMemo(() => {
     if (isSearchMode && searchData) {
       const words = searchData?.words || searchData;
@@ -108,46 +115,34 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
     return paginatedData?.words || [];
   }, [isSearchMode, searchData, paginatedData, transformSearchResults]);
 
-  // Stabilize onWordsUpdate callback
-  const stableOnWordsUpdate = useRef(onWordsUpdate);
+  // Debounce onWordsUpdate to reduce parent re-renders
+  const prevWordsRef = useRef();
   useEffect(() => {
-    stableOnWordsUpdate.current = onWordsUpdate;
-  });
-
-  useEffect(() => {
-    if (stableOnWordsUpdate.current) {
-      stableOnWordsUpdate.current(currentWords);
+    if (onWordsUpdate && prevWordsRef.current !== currentWords) {
+      prevWordsRef.current = currentWords;
+      onWordsUpdate(currentWords);
     }
-  }, [currentWords]);
+  }, [currentWords, onWordsUpdate]);
 
-  const isLoading = useMemo(() => {
-    if (isSearchMode) {
-      return isSearchLoading || isSearchFetching;
-    }
-    return isLoadingPaginated;
-  }, [isSearchMode, isSearchLoading, isSearchFetching, isLoadingPaginated]);
+  const isLoading = isSearchMode 
+    ? isSearchLoading || isSearchFetching 
+    : isLoadingPaginated;
 
-  const totalItems = useMemo(() => {
-    if (isSearchMode) {
-      return searchData?.total || currentWords.length;
-    }
-    return paginatedData?.total || 0;
-  }, [isSearchMode, searchData, paginatedData, currentWords.length]);
+  const totalItems = isSearchMode 
+    ? searchData?.total || currentWords.length 
+    : paginatedData?.total || 0;
 
-  const totalPages = useMemo(() => {
-    if (isSearchMode) {
-      return 1;
-    }
-    return Math.ceil(totalItems / itemsPerPage);
-  }, [isSearchMode, totalItems, itemsPerPage]);
+  const totalPages = isSearchMode 
+    ? 1 
+    : Math.ceil(totalItems / itemsPerPage);
 
   const handleSortChange = useCallback((sortType) => {
     setActiveSort(sortType);
     setCurrentPage(1);
+    setHasPaginated(false);
     if (isSearchMode) {
       setIsSearchMode(false);
       setSearchQuery('');
-      setDebouncedSearchQuery('');
     }
   }, [isSearchMode]);
 
@@ -157,30 +152,30 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
     if (!value.trim()) {
       setIsSearchMode(false);
       setCurrentPage(1);
-      setDebouncedSearchQuery('');
     }
   }, []);
 
   const handleClearSearch = useCallback(() => {
     setSearchQuery('');
-    setDebouncedSearchQuery('');
     setIsSearchMode(false);
     setCurrentPage(1);
   }, []);
 
+  // Optimized smooth scroll
+  useEffect(() => {
+    if (currentPage > 1 && gridContainerRef.current) {
+      requestAnimationFrame(() => {
+        gridContainerRef.current?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      });
+    }
+  }, [currentPage]);
+
   const handlePagination = useCallback(() => {
     setCurrentPage(prev => prev + 1);
   }, []);
-
-  // Remove scroll on page change - this can cause jank on mobile
-  // useEffect(() => {
-  //   if (currentPage > 1 && gridContainerRef.current) {
-  //     gridContainerRef.current.scrollIntoView({ 
-  //       behavior: 'smooth', 
-  //       block: 'start' 
-  //     });
-  //   }
-  // }, [currentPage]);
 
   if (isLoading && currentPage === 1 && !isSearchMode) {
     return (
@@ -217,20 +212,20 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
   return (
     <div ref={gridContainerRef} className="space-y-6">
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="relative w-full sm:w-[70%]">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search words..."
+            placeholder="Search words, definitions, or synonyms..."
             value={searchQuery}
             onChange={handleSearchChange}
-            className="w-full pl-10 pr-10 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors"
+            className="w-[70%] pl-10 pr-10 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent will-change-transform"
             aria-label="Search words"
           />
           {searchQuery && (
             <button
               onClick={handleClearSearch}
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors touch-manipulation"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 touch-manipulation"
               aria-label="Clear search"
             >
               <X className="w-4 h-4" />
@@ -238,16 +233,16 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
           )}
         </div>
 
-        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 sm:pb-0 w-full sm:w-auto">
+        <div className="flex gap-7 scrollbar-hide">
           {SORT_OPTIONS.map(({ key, label }) => (
             <button
               key={key}
               onClick={() => handleSortChange(key)}
               className={cn(
-                'shrink-0 rounded-lg px-3 sm:px-4 py-2 text-sm font-medium transition-colors whitespace-nowrap touch-manipulation',
+                'shrink-0 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap touch-manipulation',
                 activeSort === key
                   ? 'bg-orange-500 text-white shadow-md'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
               )}
               aria-label={`Sort by ${label}`}
               aria-pressed={activeSort === key}
@@ -262,7 +257,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
       <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
         <span>
           {isSearchMode 
-            ? `${currentWords.length} result${currentWords.length !== 1 ? 's' : ''}`
+            ? `Search results for "${searchQuery}" (${currentWords.length} found)`
             : `Page ${currentPage} of ${totalPages}`
           }
         </span>
@@ -279,13 +274,13 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
           <div 
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
             style={{ 
-              willChange: 'auto',
-              transform: 'translateZ(0)' 
+              contentVisibility: 'auto',
+              containIntrinsicSize: 'auto 500px'
             }}
           >
             {currentWords.map((word) => (
               <WordCard
-                key={word.id}
+                key={`${word.id}-${currentPage}-${isSearchMode ? 'search' : 'normal'}`}
                 word={word}
                 isLearned={isLearned(String(word.id))}
                 isFavorite={isFavorite(String(word.id))}
@@ -296,29 +291,27 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
             ))}
           </div>
 
-          {!isSearchMode && currentPage < totalPages && (
-            <div className='flex justify-center items-center pt-4'>
-              <button
-                onClick={handlePagination}
-                disabled={isLoading}
-                className="
-                  flex items-center justify-center
-                  px-6 py-3
-                  rounded-xl
-                  bg-purple-500 text-white
-                  font-medium
-                  shadow-md
-                  transition-all duration-200
-                  hover:bg-purple-600 hover:shadow-lg
-                  active:scale-95
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                  touch-manipulation
-                "
-              >
-                {isLoading ? 'Loading...' : 'Load more'}
-              </button>
-            </div>
-          )}
+          <div className='flex justify-center items-center pt-4'>
+            <button
+              onClick={handlePagination}
+              disabled={isLoading || isSearchMode}
+              className="
+                flex items-center justify-center
+                px-6 py-3
+                rounded-xl
+                bg-purple-500 text-white
+                font-medium
+                shadow-md
+                touch-manipulation
+                active:scale-95
+                disabled:opacity-50 disabled:cursor-not-allowed
+                will-change-transform
+              "
+              aria-label="Load more words"
+            >
+              {isLoading ? 'Loading...' : 'Load more'}
+            </button>
+          </div>
         </>
       ) : (
         <div className="text-center py-16">
@@ -330,7 +323,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
           </h3>
           <p className="text-slate-500 dark:text-slate-400 mb-4">
             {isSearchMode
-              ? `Try a different search term`
+              ? `Try a different search term for "${searchQuery}"`
               : 'Check back later for new words'}
           </p>
           {isSearchMode && (
