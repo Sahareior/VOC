@@ -22,7 +22,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate }) {
   const gridContainerRef = useRef(null);
   const [activeSort, setActiveSort] = useState('id');
   const [searchQuery, setSearchQuery] = useState('');
-  const [currentPage, setCurrentPage] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
   const [hasPaginated, setHasPaginated] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
