@@ -1,11 +1,10 @@
-// app/auth/signup/page.tsx
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
 import AuthLayout from '../homepage-component/AuthLayout';
+import { Button } from '../../components/ui/Button';
 
 
 export default function SignupPage() {
@@ -22,7 +21,7 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError('');
@@ -44,7 +43,7 @@ export default function SignupPage() {
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) return;
@@ -53,7 +52,6 @@ export default function SignupPage() {
     setError('');
 
     try {
-      // TODO: Replace with your actual signup API call
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -68,7 +66,6 @@ export default function SignupPage() {
         throw new Error('Signup failed. Please try again.');
       }
 
-      // TODO: Handle successful signup
       router.push('/dashboard');
     } catch (err) {
       setError('Signup failed. Please try again.');

@@ -1,25 +1,15 @@
-// app/auth/AuthLayout.tsx
 import { ReactNode } from 'react';
 import Link from 'next/link';
-
-interface AuthLayoutProps {
-  children: ReactNode;
-  title: string;
-  subtitle: string;
-  showBackButton?: boolean;
-}
 
 export default function AuthLayout({ 
   children, 
   title, 
   subtitle,
   showBackButton = false 
-}: AuthLayoutProps) {
+}) {
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-gray-900">
-      {/* Header */}
       <header className="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-
       </header>
 
       <main className="flex-1 flex flex-col items-center justify-center p-6">
@@ -51,7 +41,6 @@ export default function AuthLayout({
         </div>
       </main>
 
-      {/* Footer */}
       <footer className="px-6 py-4 border-t border-gray-200 dark:border-gray-800">
         <div className="max-w-7xl mx-auto text-center text-sm text-gray-600 dark:text-gray-400">
           © {new Date().getFullYear()} WordMaster. All rights reserved.

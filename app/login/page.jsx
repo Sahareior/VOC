@@ -1,11 +1,10 @@
-// app/auth/login/page.tsx
 'use client';
 
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/Button';
 import AuthLayout from '../homepage-component/AuthLayout';
+import { Button } from '../../components/ui/Button';
 
 
 export default function LoginPage() {
@@ -18,19 +17,18 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
 
     try {
-      // TODO: Replace with your actual authentication API call
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -41,7 +39,6 @@ export default function LoginPage() {
         throw new Error('Invalid email or password');
       }
 
-      // TODO: Handle successful login
       router.push('/dashboard');
     } catch (err) {
       setError('Invalid email or password');
@@ -158,7 +155,7 @@ export default function LoginPage() {
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            onClick={() => {/* Add Google OAuth */}}
+            onClick={() => {}}
             disabled={isLoading}
             className="flex items-center justify-center gap-2 px-4 py-3 border border-gray-300 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors text-gray-700 dark:text-gray-300"
           >
@@ -170,7 +167,6 @@ export default function LoginPage() {
             </svg>
             Google
           </button>
-        
         </div>
 
         <div className="text-center text-sm text-gray-600 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-800">
