@@ -87,7 +87,7 @@ export function Modal({
             </div>
           )}
 
-          <div className="px-6 py-4">{children}</div>
+          <div className="md:px-6 px-1 py-4">{children}</div>
         </div>
       </div>
     </Fragment>

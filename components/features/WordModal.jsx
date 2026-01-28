@@ -198,8 +198,8 @@ export const WordModal = memo(function WordModal({
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-2xl mx-auto space-y-8">
+        <div className="flex-1 overflow-y-auto p-2 md:p-6">
+          <div className="md:max-w-2xl w-full mx-auto space-y-8">
             <div className="relative">
               <div className="flex items-start justify-between gap-6">
                 <div className="flex-1">
@@ -340,33 +340,11 @@ export const WordModal = memo(function WordModal({
                   )}
                 </div>
 
-                {(onPrevious || onNext) && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity">
-                    Use ← → keys or click arrows
-                  </div>
-                )}
+    
               </div>
             )}
 
-            <div className="flex flex-wrap items-center gap-2">
-              {word.type && (
-                <Badge 
-                  variant="secondary" 
-                  className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                >
-                  {word.type}
-                </Badge>
-              )}
-              
-              {word.category && (
-                <Badge 
-                  variant="outline"
-                  className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300"
-                >
-                  {typeof word.category === 'object' ? word.category.name : word.category}
-                </Badge>
-              )}
-            </div>
+       
 
             {word.definition && (
               <div className="group relative">
