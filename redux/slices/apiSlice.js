@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 export const api = createApi({
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: 'https://new.eflip.com/',
+    baseUrl: 'https://new.eflip.com',
     prepareHeaders: (headers) => {
       const token =
         typeof window !== 'undefined'
@@ -19,15 +19,15 @@ export const api = createApi({
 
   endpoints: (builder) => ({
     getWords: builder.query({
-      query: ({ offset = 0, limit = 20, sort = 'id' }) => ({
-        url: 'words',
+      query: ({ offset = 1, limit = 20, sort = 'id' }) => ({
+        url: 'words/',
         params: { offset, limit, sort },
       }),
     }),
 
     getSearchWords: builder.query({
       query: (text) => ({
-        url: 'words/search',
+        url: 'words/search/',
         params: { q: text },
       }),
     }),
