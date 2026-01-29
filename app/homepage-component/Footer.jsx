@@ -1,7 +1,6 @@
 'use client'
 
-import React from 'react';
-import { BookOpen, Globe, GraduationCap, Brain, Sparkles } from 'lucide-react';
+import { BookOpen, Sparkles } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import logo from '../../public/logo.png' 
 import Image from 'next/image';

@@ -33,7 +33,7 @@ export const api = createApi({
 
     getSearchWords: builder.query({
       query: (text) => ({
-        url: 'words/search/',
+        url: 'words/search',
         params: { q: text },
       }),
     }),
