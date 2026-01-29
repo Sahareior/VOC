@@ -58,9 +58,9 @@ export function Header({ onOpenHelp }) {
 
   const navigation = [
     { name: 'Home', href: '/', icon: Home },
-    { name: 'Dashboard', href: '/dashboard', icon: User },
-    { name: 'Quiz', href: '/quiz', icon: FileQuestion },
     { name: 'Groups', href: '/groups', icon: BookDownIcon },
+    { name: 'Quiz', href: '/quiz', icon: FileQuestion },
+    { name: 'Dashboard', href: '/dashboard', icon: User },
   ];
 
   const isActive = (href) => {
