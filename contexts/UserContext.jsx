@@ -32,6 +32,7 @@ const UserContext = createContext(undefined);
 export function UserProvider({ children }) {
   const [state, setState] = useState(INITIAL_STATE);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [allData, setAllData] = useState([])
 
   useEffect(() => {
     const savedState = storage.get(STORAGE_KEY, INITIAL_STATE);
@@ -109,6 +110,8 @@ export function UserProvider({ children }) {
   const value = {
     ...state,
     toggleLearned,
+    setAllData,
+    allData,
     toggleFavorite,
     isLearned,
     isFavorite,

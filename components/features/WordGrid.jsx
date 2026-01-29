@@ -11,6 +11,8 @@ import { Button } from '../ui/Button';
 import GroupsFiltter from '../../app/homepage-component/GroupsFiltter';
 
 
+
+
 const SORT_OPTIONS = [
   { key: 'random', label: 'Random' },
   { key: 'az', label: 'A-Z' },
@@ -34,6 +36,8 @@ const getItemsPerPage = () => {
   const [isSearchMode, setIsSearchMode] = useState(false);
   const [groupsData,setGroupsData] = useState([])
   const searchTimeoutRef = useRef(null);
+
+  const {setAllData} = useUser()
 
   const { 
     data: paginatedData, 
@@ -117,15 +121,19 @@ const getItemsPerPage = () => {
     if (isSearchMode && searchData) {
       const words = searchData?.words || searchData;
       const wordArray = Array.isArray(words) ? words : [];
+      setAllData(transformSearchResults(wordArray))
       return transformSearchResults(wordArray);
     }
     if(groupsData?.length> 0){
+      setAllData(groupsData)
       return groupsData
     }
 
     if(groupPageData?.length > 0){
+       setAllData(groupPageData)
       return groupPageData
     }
+    setAllData(paginatedData?.words)
     return paginatedData?.words || [];
   }, [isSearchMode, searchData, paginatedData, transformSearchResults,groupsData,groupPageData]);
 

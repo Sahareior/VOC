@@ -50,6 +50,7 @@ const IndividualGroup = ({params}) => {
     }
   };
 
+  console.log(displayWords,'this is asnd')
 
   
   if(isLoading){

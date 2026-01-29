@@ -12,7 +12,7 @@ const Hero = () => {
   const { theme } = useTheme();
 
   return (
-    <div className={`relative min-h-screen py-16 pb-36 flex items-center overflow-hidden ${theme === 'light' ? 'bg-gradient-to-br from-rose-50 via-red-50 to-orange-50' : 'bg-gradient-to-br from-slate-900 via-red-950 to-slate-950'}`}>
+    <div className={`relative min-h-[80vh] py-16 pb-36 flex items-center overflow-hidden ${theme === 'light' ? 'bg-gradient-to-br from-rose-50 via-red-50 to-orange-50' : 'bg-gradient-to-br from-slate-900 via-red-950 to-slate-950'}`}>
       <div className={`absolute inset-0 ${theme === 'light' ? 'bg-gradient-to-br from-rose-50 via-red-50 to-orange-50' : 'bg-gradient-to-br from-slate-900 via-red-950 to-slate-950'}`}>
         <div 
           className="absolute inset-0"

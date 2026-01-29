@@ -36,6 +36,7 @@ export const WordModal = memo(function WordModal({
   onPrevious,
   currentIndex,
   totalWords,
+  locationPath
 }) {
   const { speak } = useVoice();
   const [isSpeakingAll, setIsSpeakingAll] = useState(false);
@@ -146,14 +147,25 @@ export const WordModal = memo(function WordModal({
     }
   }, [word, onToggleFavorite]);
 
-  const handleToggleLearned = useCallback(() => {
-    if (word?.id) {
-      const wordId = typeof word.id === 'number' ? word.id.toString() : word.id;
-      onToggleLearned(wordId);
-    }
-  }, [word, onToggleLearned]);
+useEffect(() => {
+  if (
+    locationPath === 'header' &&
+    isOpen &&
+    word &&
+    !isSpeakingAll &&
+    !shouldAutoPlay  // Add this condition
+  ) {
+    handlePronounceAll();
+  }
+}, [
+  locationPath,
+  isOpen,
+  word?.id
+]);
+
 
   if (!word) return null;
+  console.log(locationPath)
 
   return (
     <Modal
@@ -199,11 +211,11 @@ export const WordModal = memo(function WordModal({
         </div>
 
         <div className="flex-1 overflow-y-auto p-2 md:p-6">
-          <div className="md:max-w-2xl w-full mx-auto space-y-8">
+          <div className="md:max-w-2xl w-full mx-auto space-y-5">
             <div className="relative">
               <div className="flex items-start justify-between gap-6">
                 <div className="flex-1">
-                  <h1 className="text-4xl font-bold pb-5 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
+                  <h1 className="text-2xl font-bold pb-5 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
                     {word.name || word.term}
                   </h1>
                   
@@ -284,8 +296,8 @@ export const WordModal = memo(function WordModal({
                 <Image
                   src={word.image}
                   alt={word.name || word.term || 'Word illustration'}
-                  width={400}
-                  height={300}
+                  width={300}
+                  height={200}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   loading="lazy"
                   onError={(e) => {
@@ -350,12 +362,12 @@ export const WordModal = memo(function WordModal({
               <div className="group relative">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500 to-blue-500 rounded-2xl blur opacity-0 group-hover:opacity-20 transition duration-500" />
                 <div className="relative p-2 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                       <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                        <BookOpen className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+                        <BookOpen className="w-3 h-3 text-primary-600 dark:text-primary-400" />
                       </div>
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         Definition
                       </h3>
                     </div>
@@ -367,7 +379,7 @@ export const WordModal = memo(function WordModal({
                       <Volume2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg">
+                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed text[16px]">
                     {word.definition}
                   </p>
                 </div>
@@ -378,10 +390,10 @@ export const WordModal = memo(function WordModal({
               <div className="group relative">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl blur opacity-0 group-hover:opacity-20 transition duration-500" />
                 <div className="relative p-2 bg-gradient-to-br from-white to-emerald-50 dark:from-slate-800 dark:to-emerald-900/5 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
                      
-                      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         Example Usage
                       </h3>
                     </div>
@@ -395,7 +407,7 @@ export const WordModal = memo(function WordModal({
                   </div>
                   <div className="relative">
                   
-                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg  italic">
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[16px]  italic">
                       {word.sentence}
                     </p>
                    
