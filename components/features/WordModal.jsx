@@ -167,7 +167,7 @@ export const WordModal = memo(function WordModal({
       <div 
         className="flex w-full flex-col h-[80vh] overflow-hidden"
       >
-        <div className="flex items-center justify-between pr-2 p-1 pb-0">
+        <div className="flex items-center justify-between px-3 p-1 pb-0">
           <div className="flex items-center gap-4">
             {currentIndex !== null && totalWords && (
               <div className="flex items-center gap-2">
@@ -231,7 +231,7 @@ export const WordModal = memo(function WordModal({
                     disabled={isSpeakingAll}
                   >
                     <Volume2 className={cn(
-                      "w-6 h-6",
+                      "md:w-6 md:h-6 w-4 h-4",
                       isSpeakingAll && "animate-pulse"
                     )} />
                     {isSpeakingAll && (
@@ -253,7 +253,7 @@ export const WordModal = memo(function WordModal({
                       aria-label={isPaused ? "Resume" : "Pause"}
                     >
                       <Pause className={cn(
-                        "w-5 h-5",
+                        "md:w-6 md:h-6 w-4 h-4",
                         isPaused && "fill-current"
                       )} />
                     </button>
@@ -272,7 +272,7 @@ export const WordModal = memo(function WordModal({
                       )}
                       aria-label="Repeat from beginning"
                     >
-                      <RotateCcw className="w-5 h-5" />
+                      <RotateCcw className="md:w-6 md:h-6 w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -349,7 +349,7 @@ export const WordModal = memo(function WordModal({
             {word.definition && (
               <div className="group relative">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500 to-blue-500 rounded-2xl blur opacity-0 group-hover:opacity-20 transition duration-500" />
-                <div className="relative p-6 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <div className="relative p-2 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                       <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
@@ -377,34 +377,28 @@ export const WordModal = memo(function WordModal({
             {word.sentence && (
               <div className="group relative">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl blur opacity-0 group-hover:opacity-20 transition duration-500" />
-                <div className="relative p-6 bg-gradient-to-br from-white to-emerald-50 dark:from-slate-800 dark:to-emerald-900/5 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
+                <div className="relative p-2 bg-gradient-to-br from-white to-emerald-50 dark:from-slate-800 dark:to-emerald-900/5 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                      <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                        <Sparkles className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                      </div>
+                     
                       <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                         Example Usage
                       </h3>
                     </div>
                     <button
                       onClick={handlePronounceExample}
-                      className="p-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+                      className="p-2 md:px-6 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400"
                       aria-label="Pronounce example"
                     >
                       <Volume2 className="w-4 h-4" />
                     </button>
                   </div>
                   <div className="relative">
-                    <div className="absolute -left-4 top-0 text-3xl text-emerald-400 opacity-50">
-                      "
-                    </div>
-                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg pl-4 italic">
+                  
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-lg  italic">
                       {word.sentence}
                     </p>
-                    <div className="absolute -right-4 bottom-0 text-3xl text-emerald-400 opacity-50">
-                      "
-                    </div>
+                   
                   </div>
                 </div>
               </div>

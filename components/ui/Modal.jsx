@@ -56,7 +56,7 @@ export function Modal({
           )}
         >
           {(title || showClose) && (
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between px-2 py-2 border-b border-slate-200 dark:border-slate-700">
               <div>
                 {title && (
                   <h2
@@ -87,7 +87,7 @@ export function Modal({
             </div>
           )}
 
-          <div className="md:px-6 px-1 py-4">{children}</div>
+          <div className="">{children}</div>
         </div>
       </div>
     </Fragment>
