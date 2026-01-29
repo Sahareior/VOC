@@ -13,7 +13,7 @@ export default function Groups() {
   const [expandedCategories, setExpandedCategories] = useState([]);
   const { theme } = useTheme();
   const router = useRouter();
-  const { data: groupsData, isLoading, error } = useGetGroupsQuery(undefined);
+  const { data: groupsData, isLoading, error } = useGetGroupsQuery();
 
   useEffect(() => {
     if (groupsData && groupsData.length > 0) {
@@ -220,12 +220,12 @@ export default function Groups() {
                           key={item.id}
                           className={`px-3 py-2 rounded ${t.item} transition-colors flex items-center justify-between`}
                         >
-                          <button 
-                            onClick={() => router.push(`/groups/${item.slug}`)} 
-                            className="font-medium hover:underline"
-                          >
-                            {item.name}
-                          </button>
+   <button 
+  onClick={() => router.push(`/groups/subcategory?category=${category.slug}&subcategory=${item.slug}`)} 
+  className="font-medium hover:underline"
+>
+  {item.name}
+</button>
                         </div>
                       ))}
                     </div>

@@ -8,8 +8,7 @@ import { useUser } from '../../contexts/UserContext';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const Hero = () => {
-  const { isLearned } = useUser();
-  const [isAnimating, setIsAnimating] = useState(false);
+
   const { theme } = useTheme();
 
   return (
@@ -50,20 +49,7 @@ const Hero = () => {
 
       <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="text-center">
-          <div className={`inline-flex items-center gap-2 px-6 py-3 rounded-full border backdrop-blur-lg mb-8 group hover:transition-all duration-500 cursor-pointer ${
-            theme === 'light' 
-              ? 'bg-white/80 border-red-200 hover:bg-white hover:border-red-300' 
-              : 'bg-white/5 border-white/10 hover:bg-white/10'
-          }`}>
-            <Sparkles className={`w-4 h-4 animate-pulse ${theme === 'light' ? 'text-red-500' : 'text-red-400'}`} />
-            <span className={`text-sm font-medium tracking-wide ${theme === 'light' ? 'text-gray-700' : 'text-white/80'}`}>
-              AI-Powered Learning Platform
-            </span>
-            <div className={`w-px h-3 mx-2 ${theme === 'light' ? 'bg-red-300' : 'bg-white/20'}`} />
-            <span className={`text-xs transition-colors ${theme === 'light' ? 'text-gray-500 group-hover:text-gray-700' : 'text-white/60 group-hover:text-white/80'}`}>
-              Join 10,000+ learners
-            </span>
-          </div>
+
 
           <div className="relative mb-10">
             <h1 className={`text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold mb-6 leading-tight tracking-tight ${theme === 'light' ? 'text-gray-900' : 'text-white'}`}>
@@ -109,55 +95,9 @@ const Hero = () => {
             , and accelerate your progress with personalized guidance.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
-            <button className={`group px-10 py-4 bg-transparent font-semibold tracking-wide rounded-xl border transition-all duration-500 backdrop-blur-sm ${
-              theme === 'light'
-                ? 'text-gray-700 border-red-300 hover:border-red-400 hover:bg-red-50/50'
-                : 'text-white border-white/20 hover:border-red-400/40 hover:bg-red-900/10'
-            }`}>
-              <div className="flex items-center justify-center gap-3">
-                <Brain className={`w-5 h-5 group-hover:scale-110 transition-transform duration-300 ${
-                  theme === 'light' ? 'text-red-600' : 'text-red-400'
-                }`} />
-                <span className="relative">
-                  See How It Works
-                  <span className={`absolute -bottom-1 left-0 right-0 h-[1px] transform scale-x-0 group-hover:scale-x-100 transition-transform duration-500 origin-left ${
-                    theme === 'light' ? 'bg-red-400' : 'bg-red-400/40'
-                  }`} />
-                </span>
-              </div>
-            </button>
-          </div>
+ 
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
-            {[
-              { icon: Sparkles, text: 'AI-Powered Insights', color: 'text-red-500' },
-              { icon: Target, text: 'Personalized Goals', color: 'text-rose-500' },
-              { icon: Brain, text: 'Smart Learning', color: 'text-orange-500' },
-            ].map((feature, index) => (
-              <div
-                key={index}
-                className={`flex items-center gap-3 p-4 rounded-lg backdrop-blur-sm border transition-all duration-500 group ${
-                  theme === 'light'
-                    ? 'bg-white/50 border-red-200 hover:border-red-300 hover:bg-white/70'
-                    : 'bg-white/5 border-white/5 hover:border-red-900/20'
-                }`}
-              >
-                <div className={`p-2 rounded-lg transition-colors group-hover:bg-opacity-20 ${feature.color} ${
-                  theme === 'light' 
-                    ? 'bg-red-100 group-hover:bg-red-200' 
-                    : 'bg-white/5 group-hover:bg-red-900/20'
-                }`}>
-                  <feature.icon className="w-5 h-5" />
-                </div>
-                <span className={`text-sm font-medium tracking-wide ${
-                  theme === 'light' ? 'text-gray-700' : 'text-white/70'
-                }`}>
-                  {feature.text}
-                </span>
-              </div>
-            ))}
-          </div>
+      
         </div>
       </div>
 

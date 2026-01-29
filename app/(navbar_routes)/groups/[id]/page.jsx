@@ -1,18 +1,32 @@
 'use client'
 
 import React, { useCallback, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { WordGrid } from '../../../../components/features/WordGrid';
 import { useUser } from '../../../../contexts/UserContext';
 import { WordModal } from '../../../../components/features/WordModal';
+import { useGetWordsByGroupsQuery } from '../../../../redux/slices/apiSlice';
 
-const IndividualGroup = () => {
+const IndividualGroup = ({params}) => {
     const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
   const [selectedWord, setSelectedWord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [displayWords, setDisplayWords] = useState([]);
   const [shouldLoadGrid, setShouldLoadGrid] = useState(false);
+    const searchParams = useSearchParams();
+  
+  const category = searchParams.get('category');
+  const subcategory = searchParams.get('subcategory');
+  //  groups: groupSlug,
+  //               subcategory: subcategorySlug
 
+  const {data,isLoading} = useGetWordsByGroupsQuery({groups:category,subcategory })
+
+
+
+
+    console.log(data,'hgyufgyt')
 
   const handleOpenModal = useCallback((word) => {
     setSelectedWord(word);
@@ -35,6 +49,16 @@ const IndividualGroup = () => {
       setSelectedWord(displayWords[currentIndex - 1]);
     }
   };
+
+
+  
+  if(isLoading){
+    return(
+     <div className ="flex h-screen justify-center items-center">
+       <p>Loading.....</p>
+      </div>
+    )
+  }
   
   return (
     <div className="max-w-7xl mx-auto py-16 px-4">
@@ -47,6 +71,7 @@ const IndividualGroup = () => {
        <WordGrid
         onOpenModal={handleOpenModal} 
               onWordsUpdate={setDisplayWords}
+              groupPageData={data}
        />
      </div>
 

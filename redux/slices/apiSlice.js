@@ -25,6 +25,12 @@ export const api = createApi({
       }),
     }),
 
+    getWordsByGroups: builder.query({
+      query: ({ groups, subcategory }) => ({
+        url: `groups/${groups}/${subcategory}`,
+      }),
+    }),
+
     getSearchWords: builder.query({
       query: (text) => ({
         url: 'words/search/',
@@ -40,7 +46,9 @@ export const api = createApi({
 
 export const {
   useGetWordsQuery,
+  useGetWordsByGroupsQuery,  // Added this export
   useGetSearchWordsQuery,
   useLazyGetSearchWordsQuery,
   useGetGroupsQuery,
+  useLazyGetWordsByGroupsQuery
 } = api;

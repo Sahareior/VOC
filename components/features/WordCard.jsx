@@ -80,6 +80,7 @@ export const WordCard = ({
 
   return (
     <div
+    
       className="relative group perspective-1000"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -87,8 +88,9 @@ export const WordCard = ({
       <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/10 via-purple-500/10 to-pink-500/10 rounded-3xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
       
       <div
+      onClick={handleCardClick}
         className={cn(
-          "relative bg-white/5 dark:bg-slate-900/20 backdrop-blur-xl border border-white/20 dark:border-slate-700/30 rounded-2xl overflow-hidden transition-all duration-500 transform-gpu",
+          "relative bg-white/5 hover:cursor-pointer dark:bg-slate-900/20 backdrop-blur-xl border border-white/20 dark:border-slate-700/30 rounded-2xl overflow-hidden transition-all duration-500 transform-gpu",
           "group-hover:scale-[1.02] group-hover:border-white/40 dark:group-hover:border-slate-600/50",
           "hover:shadow-2xl hover:shadow-purple-500/10"
         )}
@@ -175,7 +177,7 @@ export const WordCard = ({
 
         <div
           className="p-5 cursor-pointer"
-          onClick={handleCardClick}
+          
           style={{
             transform: isHovered ? 'translateZ(5px)' : 'none',
           }}

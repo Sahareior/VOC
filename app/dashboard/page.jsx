@@ -69,21 +69,7 @@ export default function DashboardPage() {
     setIsModalOpen(false);
   };
 
-  const wordsByCategory = useMemo(() => {
-    const counts = {
-      noun: 0,
-      verb: 0,
-      adjective: 0,
-      adverb: 0,
-      preposition: 0,
-    };
-    
-    learnedWordObjects.forEach(word => {
-      counts[word.category]++;
-    });
-    
-    return counts;
-  }, [learnedWordObjects]);
+
 
   const progressPercentage = Math.round((learnedWords.length / SAMPLE_WORDS.length) * 100);
 

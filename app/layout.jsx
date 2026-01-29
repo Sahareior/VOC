@@ -35,7 +35,7 @@ export default function RootLayout({
                 <main className="flex-1">
                   <ReduxProvider>{children}</ReduxProvider>
                 </main>
-                <VoiceCommand />
+                {/* <VoiceCommand /> */}
                 <Footer />
               </div>
             </VoiceProvider>
