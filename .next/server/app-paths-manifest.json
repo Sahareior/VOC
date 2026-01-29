@@ -1,6 +1,7 @@
 {
   "/page": "app/page.js",
-  "/(navbar_routes)/groups/page": "app/(navbar_routes)/groups/page.js",
-  "/(navbar_routes)/groups/[id]/page": "app/(navbar_routes)/groups/[id]/page.js",
-  "/login/page": "app/login/page.js"
+  "/dashboard/page": "app/dashboard/page.js",
+  "/(navbar_routes)/quiz/page": "app/(navbar_routes)/quiz/page.js",
+  "/login/page": "app/login/page.js",
+  "/(navbar_routes)/groups/page": "app/(navbar_routes)/groups/page.js"
 }

@@ -85,36 +85,37 @@ const getItemsPerPage = () => {
   }, [searchQuery, triggerSearch]);
 
   
-  const transformSearchResults = useCallback((results) => {
-    if (!Array.isArray(results)) return [];
-    
-    return results.map((item) => ({
-      id: item.id || Math.floor(Math.random() * 10000),
-      slug: item.slug || 'unknown-word',
-      name: item.slug || 'Unknown Word',
-      sentence: 'Example will load when you view the word',
-      definition: 'Search result - load full details on click',
-      type: 'noun',
-      image: item.image,
-      category: {
-        id: 1,
-        name: 'General',
-        slug: 'general'
-      },
-      subcategory: {
-        id: 1,
-        name: 'Vocabulary',
-        slug: 'vocabulary'
-      },
-      term: item.slug || 'Unknown Word',
-      phonetic: '/',
-      example: 'Example will load when you view the word',
-      difficulty: 'beginner',
-      synonyms: [],
-      antonyms: [],
-      createdAt: new Date().toISOString(),
-    }));
-  }, []);
+const transformSearchResults = useCallback((results) => {
+  if (!Array.isArray(results)) return [];
+
+  return results.map((item) => ({
+    // REQUIRED
+    id: item.id,
+    name: item.name ?? item.slug,
+    slug: item.slug,
+    term: item.name ?? item.slug,
+
+    // CONTENT
+    sentence: item.sentence ?? '',
+    definition: item.definition ?? '',
+    type: item.type ?? 'noun',
+    image: item.image ?? '',
+
+    // ✅ REAL backend data (no hardcoding)
+    category: item.category ?? null,
+    subcategory: item.subcategory ?? null,
+
+    // OPTIONAL (WordCard-safe defaults)
+    phonetic: item.phonetic ?? '',
+    difficulty: item.difficulty ?? 'beginner',
+    synonyms: item.synonyms ?? [],
+    antonyms: item.antonyms ?? [],
+    example: item.example ?? item.sentence ?? '',
+
+    createdAt: item.createdAt ?? new Date().toISOString(),
+  }));
+}, []);
+
 
   // Optimize currentWords calculation
   const currentWords = useMemo(() => {

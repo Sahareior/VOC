@@ -65,10 +65,7 @@ export const WordCard = ({
     onToggleFavorite(word.id);
   }, [onToggleFavorite, word.id]);
 
-  const handleToggleLearned = useCallback((e) => {
-    e.stopPropagation();
-    onToggleLearned(word.id);
-  }, [onToggleLearned, word.id]);
+console.log(word,'asdadasd')
 
   const imageDomain = useMemo(() => {
     try {

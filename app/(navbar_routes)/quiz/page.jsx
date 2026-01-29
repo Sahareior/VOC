@@ -2,9 +2,9 @@ import React from 'react';
 
 const Quiz = () => {
     return (
-        <div>
-            <p>This is quiz</p>
-        </div>
+      <div className='h-screen flex justify-center items-center'>
+      <h2>Coming soon......</h2>
+    </div>
     );
 };
 

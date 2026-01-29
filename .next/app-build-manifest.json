@@ -11,15 +11,10 @@
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/(navbar_routes)/groups/page": [
+    "/dashboard/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(navbar_routes)/groups/page.js"
-    ],
-    "/(navbar_routes)/groups/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/(navbar_routes)/groups/[id]/page.js"
+      "static/chunks/app/dashboard/page.js"
     ],
     "/(navbar_routes)/quiz/page": [
       "static/chunks/webpack.js",
@@ -30,6 +25,11 @@
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/login/page.js"
+    ],
+    "/(navbar_routes)/groups/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/(navbar_routes)/groups/page.js"
     ]
   }
 }
