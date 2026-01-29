@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, memo, useState, useEffect } from 'react';
+import React, { useCallback, memo, useState, useEffect, useRef } from 'react';
 import { 
   Volume2, 
   Heart, 
@@ -16,10 +16,6 @@ import {
   RotateCcw,
   Badge
 } from 'lucide-react';
-// import { Modal } from '@/components/ui/Modal';
-// import { Badge } from '@/components/ui/Badge';
-// import { cn } from '@/lib/utils';
-// import { useVoice } from '@/contexts/VoiceContext';
 import Image from 'next/image';
 import { Modal } from '../ui/Modal';
 import { cn } from '../../lib/utils';
@@ -41,14 +37,56 @@ export const WordModal = memo(function WordModal({
   const { speak } = useVoice();
   const [isSpeakingAll, setIsSpeakingAll] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [currentUtterance, setCurrentUtterance] = useState(null);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
+  
+  // Use refs to track speech state
+  const currentUtteranceRef = useRef(null);
+  const speechTimeoutRef = useRef(null);
+  const isMountedRef = useRef(false);
+  const autoPlayInitiatedRef = useRef(false);
 
+  // Clean up all speech synthesis
+  const cleanupSpeech = useCallback(() => {
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+      speechTimeoutRef.current = null;
+    }
+    
+    window.speechSynthesis.cancel();
+    
+    if (currentUtteranceRef.current) {
+      // Remove event listeners to prevent memory leaks
+      const utterance = currentUtteranceRef.current;
+      utterance.onend = null;
+      utterance.onerror = null;
+      utterance.onpause = null;
+      utterance.onresume = null;
+      utterance.onstart = null;
+      currentUtteranceRef.current = null;
+    }
+    
+    if (isMountedRef.current) {
+      setIsSpeakingAll(false);
+      setIsPaused(false);
+    }
+  }, []);
+
+  // Handle pronunciation of all word parts
   const handlePronounceAll = useCallback(async () => {
-    if (!word) return;
+    if (!word || !isMountedRef.current) return;
+    
+    // Clean up any existing speech
+    cleanupSpeech();
+    
+    // Small delay to ensure cleanup is complete
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    if (!isMountedRef.current) return;
+    
     setIsSpeakingAll(true);
     setIsPaused(false);
-    window.speechSynthesis.cancel();
+    autoPlayInitiatedRef.current = true;
+
     const parts = [];
     if (word.name || word.term) {
       parts.push(word.name || word.term || '');
@@ -59,54 +97,63 @@ export const WordModal = memo(function WordModal({
     if (word.sentence) {
       parts.push(`Example: ${word.sentence}`);
     }
+
     let currentPartIndex = 0;
+    let isCancelled = false;
+    
     const speakNextPart = () => {
-      if (currentPartIndex >= parts.length) {
-        setIsSpeakingAll(false);
-        setIsPaused(false);
-        setCurrentUtterance(null);
-        if (onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1) {
-          setTimeout(() => {
-            setShouldAutoPlay(true);
-            onNext(currentIndex);
-          }, 500);
+      // Check if cancelled or component unmounted
+      if (!isMountedRef.current || isCancelled || currentPartIndex >= parts.length) {
+        if (isMountedRef.current && !isCancelled) {
+          setIsSpeakingAll(false);
+          setIsPaused(false);
+          
+          // Auto navigate to next word if available
+          if (onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1) {
+            speechTimeoutRef.current = setTimeout(() => {
+              if (isMountedRef.current) {
+                setShouldAutoPlay(true);
+                onNext(currentIndex);
+              }
+            }, 500);
+          }
         }
         return;
       }
+
       const utterance = new SpeechSynthesisUtterance(parts[currentPartIndex]);
       utterance.rate = 0.9;
       utterance.pitch = 1;
+      
       utterance.onend = () => {
-        currentPartIndex++;
-        setTimeout(speakNextPart, 800);
+        if (!isCancelled && isMountedRef.current) {
+          currentPartIndex++;
+          speechTimeoutRef.current = setTimeout(speakNextPart, 800);
+        }
       };
-      utterance.onerror = () => {
-        setIsSpeakingAll(false);
-        setIsPaused(false);
-        setCurrentUtterance(null);
+      
+      utterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        if (isMountedRef.current && !isCancelled) {
+          setIsSpeakingAll(false);
+          setIsPaused(false);
+        }
       };
-      setCurrentUtterance(utterance);
+      
+      currentUtteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     };
+    
     speakNextPart();
-  }, [word, speak, onNext, currentIndex, totalWords]);
-
-  useEffect(() => {
-    if (shouldAutoPlay && word) {
-      const timer = setTimeout(() => {
-        handlePronounceAll();
-        setShouldAutoPlay(false);
-      }, 300);
-      return () => clearTimeout(timer);
-    }
+    
+    // Return cancellation function
     return () => {
-      window.speechSynthesis.cancel();
-      setIsSpeakingAll(false);
-      setIsPaused(false);
-      setCurrentUtterance(null);
+      isCancelled = true;
+      cleanupSpeech();
     };
-  }, [word?.id, shouldAutoPlay, handlePronounceAll]);
+  }, [word, cleanupSpeech, onNext, currentIndex, totalWords]);
 
+  // Handle pause/resume
   const handlePause = useCallback(() => {
     if (window.speechSynthesis.speaking && !isPaused) {
       window.speechSynthesis.pause();
@@ -117,29 +164,24 @@ export const WordModal = memo(function WordModal({
     }
   }, [isPaused]);
 
+  // Handle repeat
   const handleRepeat = useCallback(() => {
-    window.speechSynthesis.cancel();
-    setIsSpeakingAll(false);
-    setIsPaused(false);
-    setCurrentUtterance(null);
+    cleanupSpeech();
     
-    setTimeout(() => {
-      handlePronounceAll();
+    speechTimeoutRef.current = setTimeout(() => {
+      if (isMountedRef.current) {
+        handlePronounceAll();
+      }
     }, 100);
-  }, [handlePronounceAll]);
+  }, [handlePronounceAll, cleanupSpeech]);
 
-  const handlePronounceDefinition = useCallback(() => {
-    if (word?.definition) {
-      speak(word.definition);
-    }
-  }, [word, speak]);
+  // Handle close
+  const handleClose = useCallback(() => {
+    cleanupSpeech();
+    onClose();
+  }, [cleanupSpeech, onClose]);
 
-  const handlePronounceExample = useCallback(() => {
-    if (word?.sentence) {
-      speak(word.sentence);
-    }
-  }, [word, speak]);
-
+  // Handle favorite toggle
   const handleToggleFavorite = useCallback(() => {
     if (word?.id) {
       const wordId = typeof word.id === 'number' ? word.id.toString() : word.id;
@@ -147,38 +189,97 @@ export const WordModal = memo(function WordModal({
     }
   }, [word, onToggleFavorite]);
 
-useEffect(() => {
-  if (
-    locationPath === 'header' &&
-    isOpen &&
-    word &&
-    !isSpeakingAll &&
-    !shouldAutoPlay  // Add this condition
-  ) {
-    handlePronounceAll();
-  }
-}, [
-  locationPath,
-  isOpen,
-  word?.id
-]);
+  // Handle definition pronunciation
+  const handlePronounceDefinition = useCallback(() => {
+    if (word?.definition) {
+      speak(word.definition);
+    }
+  }, [word, speak]);
 
+  // Handle example pronunciation
+  const handlePronounceExample = useCallback(() => {
+    if (word?.sentence) {
+      speak(word.sentence);
+    }
+  }, [word, speak]);
+
+  // Auto-play for header location
+  useEffect(() => {
+    if (
+      locationPath === 'header' &&
+      isOpen &&
+      word &&
+      !isSpeakingAll &&
+      !autoPlayInitiatedRef.current
+    ) {
+      autoPlayInitiatedRef.current = true;
+      handlePronounceAll();
+    }
+  }, [locationPath, isOpen, word?.id, isSpeakingAll, handlePronounceAll]);
+
+  // Handle auto-play for navigation
+  useEffect(() => {
+    if (shouldAutoPlay && word && isMountedRef.current) {
+      cleanupSpeech();
+      
+      speechTimeoutRef.current = setTimeout(() => {
+        if (isMountedRef.current) {
+          handlePronounceAll();
+          setShouldAutoPlay(false);
+        }
+      }, 300);
+    }
+  }, [word?.id, shouldAutoPlay, handlePronounceAll, cleanupSpeech]);
+
+  // Mount/unmount handling
+  useEffect(() => {
+    isMountedRef.current = true;
+    autoPlayInitiatedRef.current = false;
+    
+    return () => {
+      isMountedRef.current = false;
+      cleanupSpeech();
+    };
+  }, [cleanupSpeech]);
+
+  // Cleanup when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      cleanupSpeech();
+      autoPlayInitiatedRef.current = false;
+    }
+  }, [isOpen, cleanupSpeech]);
+
+  // Cleanup on word change
+  useEffect(() => {
+    return () => {
+      if (isMountedRef.current) {
+        cleanupSpeech();
+      }
+    };
+  }, [word?.id, cleanupSpeech]);
 
   if (!word) return null;
-  console.log(locationPath)
 
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       size="lg"
       closeOnOverlay
       closeOnEscape
       className="overflow-hidden"
     >
-      <div 
-        className="flex w-full flex-col h-[80vh] overflow-hidden"
-      >
+      <div className="flex w-full flex-col h-[80vh] overflow-hidden">
+        {/* Close button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 z-50 p-2 rounded-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-slate-800 transition-colors shadow-sm"
+          aria-label="Close modal"
+        >
+          <X className="w-5 h-5" />
+        </button>
+
         <div className="flex items-center justify-between px-3 p-1 pb-0">
           <div className="flex items-center gap-4">
             {currentIndex !== null && totalWords && (
@@ -237,7 +338,8 @@ useEffect(() => {
                       'bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30',
                       'text-primary-600 dark:text-primary-400 hover:scale-105 active:scale-95',
                       'shadow-sm hover:shadow-md',
-                      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900'
+                      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900',
+                      isSpeakingAll && 'ring-2 ring-primary-500'
                     )}
                     aria-label="Pronounce word, definition, and example"
                     disabled={isSpeakingAll}
@@ -319,10 +421,7 @@ useEffect(() => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.speechSynthesis.cancel();
-                        setIsSpeakingAll(false);
-                        setIsPaused(false);
-                        setCurrentUtterance(null);
+                        cleanupSpeech();
                         setShouldAutoPlay(true);
                         onPrevious(currentIndex);
                       }}
@@ -337,10 +436,7 @@ useEffect(() => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.speechSynthesis.cancel();
-                        setIsSpeakingAll(false);
-                        setIsPaused(false);
-                        setCurrentUtterance(null);
+                        cleanupSpeech();
                         setShouldAutoPlay(true);
                         onNext(currentIndex);
                       }}
@@ -351,12 +447,8 @@ useEffect(() => {
                     </button>
                   )}
                 </div>
-
-    
               </div>
             )}
-
-       
 
             {word.definition && (
               <div className="group relative">
@@ -392,7 +484,6 @@ useEffect(() => {
                 <div className="relative p-2 bg-gradient-to-br from-white to-emerald-50 dark:from-slate-800 dark:to-emerald-900/5 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                     
                       <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
                         Example Usage
                       </h3>
@@ -406,11 +497,9 @@ useEffect(() => {
                     </button>
                   </div>
                   <div className="relative">
-                  
-                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[16px]  italic">
+                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[16px] italic">
                       {word.sentence}
                     </p>
-                   
                   </div>
                 </div>
               </div>
@@ -421,10 +510,7 @@ useEffect(() => {
                 {onPrevious && currentIndex > 0 ? (
                   <button
                     onClick={() => {
-                      window.speechSynthesis.cancel();
-                      setIsSpeakingAll(false);
-                      setIsPaused(false);
-                      setCurrentUtterance(null);
+                      cleanupSpeech();
                       setShouldAutoPlay(true);
                       onPrevious(currentIndex);
                     }}
@@ -442,10 +528,7 @@ useEffect(() => {
                 {onNext && currentIndex < (totalWords || 0) - 1 ? (
                   <button
                     onClick={() => {
-                      window.speechSynthesis.cancel();
-                      setIsSpeakingAll(false);
-                      setIsPaused(false);
-                      setCurrentUtterance(null);
+                      cleanupSpeech();
                       setShouldAutoPlay(true);
                       onNext(currentIndex);
                     }}
