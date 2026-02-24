@@ -3,12 +3,14 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { WordCard } from './WordCard';
+// import { DUMMY_WORDS } from '../../lib/dummyData';
 
 import { useUser } from '../../contexts/UserContext';
 import { useGetWordsQuery, useLazyGetSearchWordsQuery } from '../../redux/slices/apiSlice';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import GroupsFiltter from '../../app/homepage-component/GroupsFiltter';
+import { DUMMY_WORDS } from '../../lib/dummyData';
 
 
 
@@ -134,9 +136,13 @@ const transformSearchResults = useCallback((results) => {
        setAllData(groupPageData)
       return groupPageData
     }
-    setAllData(paginatedData?.words)
-    return paginatedData?.words || [];
-  }, [isSearchMode, searchData, paginatedData, transformSearchResults,groupsData,groupPageData]);
+    
+    const apiWords = paginatedData?.words || [];
+    const finalWords = apiWords.length > 0 ? apiWords : DUMMY_WORDS;
+    
+    setAllData(finalWords)
+    return finalWords;
+  }, [isSearchMode, searchData, paginatedData, transformSearchResults,groupsData,groupPageData, setAllData]);
 
   // Debounce onWordsUpdate to reduce parent re-renders
   const prevWordsRef = useRef();
@@ -216,7 +222,7 @@ console.log(groupPageData,'this is page data')
     );
   }
 
-  if (error) {
+  if (error && !DUMMY_WORDS?.length) {
     return (
       <div className="text-center py-16">
         <div className="text-6xl mb-4">⚠️</div>
@@ -238,49 +244,8 @@ console.log(groupPageData,'this is page data')
   }
 
   return (
-    <div ref={gridContainerRef} className="space-y-6">
-      <GroupsFiltter setGroupsData={setGroupsData} />
-      <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search words, definitions, or synonyms..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="md:w-[50%] w-full pl-10 pr-10 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent will-change-transform"
-            aria-label="Search words"
-          />
+    <div ref={gridContainerRef} className="">
 
-        </div>
-
-      {/* {
-        !groupPageData || !groupsData && (
-  <div className="flex gap-4 scrollbar-hide">
-  {SORT_OPTIONS
-    .filter(({ key }) => key !== 'id')
-    .map(({ key, label }) => (
-      <button
-        key={key}
-        onClick={() => handleSortChange(key)}
-        className={cn(
-          'shrink-0 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap touch-manipulation',
-          activeSort === key
-            ? 'bg-orange-500 text-white shadow-md'
-            : 'bg-slate-100 dark:bg-slate-800 text-red-500 dark:text-slate-300'
-        )}
-        aria-label={`Sort by ${label}`}
-        aria-pressed={activeSort === key}
-        disabled={isSearchMode}
-      >
-        {label}
-      </button>
-    ))}
-</div>
-
-        )
-      } */}
-      </div>
 
       <div className="flex justify-between items-center text-sm text-slate-500 dark:text-slate-400">
 
@@ -295,7 +260,7 @@ console.log(groupPageData,'this is page data')
       {currentWords.length > 0 ? (
         <>
           <div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6"
             style={{ 
               contentVisibility: 'auto',
               containIntrinsicSize: 'auto 500px'
@@ -315,29 +280,7 @@ console.log(groupPageData,'this is page data')
           </div>
 
           <div className='flex justify-center items-center pt-4'>
-  {
-    groupsData.length === 0 && (
-                <button
-              onClick={handlePagination}
-              disabled={isLoading || isSearchMode}
-              className="
-                flex items-center justify-center
-                px-6 py-3
-                rounded-xl
-                bg-red-500 text-white
-                font-medium
-                shadow-md
-                touch-manipulation
-                active:scale-95
-                disabled:opacity-50 disabled:cursor-not-allowed
-                will-change-transform
-              "
-              aria-label="Load more words"
-            >
-              {isLoading ? 'Loading...' : 'Load more'}
-            </button>
-    )
-  }
+
           </div>
         </>
       ) : (

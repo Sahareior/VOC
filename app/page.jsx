@@ -59,18 +59,11 @@ export default function HomePage() {
          
        
 
-      <Hero />
 
-      <section className="max-w-7xl  mx-auto px-4 sm:px-6 lg:px-8 py-12">
+
+      <section className="max-w-7xl  mx-auto px-4 sm:px-6 lg:px-8 py-1">
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-2">
-              Explore Words
-            </h2>
-            <p className="text-slate-600 dark:text-slate-300">
-              Click on any card to view details, pronunciation, and examples
-            </p>
-          </div>
+        
         </div>
 
 

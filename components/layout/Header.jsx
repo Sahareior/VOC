@@ -3,40 +3,40 @@
 import React, { useCallback, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { BookOpen, User, Home, Settings, Menu, X, Sun, Moon, HelpCircle, FileQuestion, BookDownIcon, Speaker, Megaphone, Speech } from 'lucide-react';
-import logo from '../../public/logo.png'
-import { useTheme } from '../../contexts/ThemeContext';
-import { cn } from '../../lib/utils';
+import { Home, BookDownIcon, FileQuestion, Speaker, User, Menu, X, Speech } from 'lucide-react';
 import Image from 'next/image';
+import logo from '../../public/logo.png';
 import { useUser } from '../../contexts/UserContext';
 import { WordModal } from '../features/WordModal';
 
-export function Header({ onOpenHelp }) {
+export function Header() {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme();
-  const { allData, isFavorite, toggleLearned, toggleFavorite } = useUser();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
+  const { allData, isFavorite, toggleLearned, toggleFavorite } = useUser();
+
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedWord, setSelectedWord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
-  const [displayWords, setDisplayWords] = useState([]);
-  const [shouldLoadGrid, setShouldLoadGrid] = useState(false);
+  const [search, setSearch] = useState('');
 
-  // Fixed: Properly handle opening modal with first item
+  /* ---------------- Word Modal Logic ---------------- */
+
   const handleOpenModal = useCallback(() => {
     if (allData && allData.length > 0) {
-      setSelectedWord(allData[0]); // Set to first item
+      setSelectedWord(allData[0]);
       setIsModalOpen(true);
-    } else {
-      console.log('No data available');
     }
   }, [allData]);
 
-  const handleCloseModal = useCallback(() => {
+  const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedWord(null);
-  }, []);
+  };
+
+  const getCurrentIndex = () => {
+    if (!selectedWord || !allData) return -1;
+    return allData.findIndex(w => w.id === selectedWord.id);
+  };
 
   const onNext = (currentIndex) => {
     if (currentIndex < allData.length - 1) {
@@ -50,150 +50,136 @@ export function Header({ onOpenHelp }) {
     }
   };
 
-  // Get current index for navigation
-  const getCurrentIndex = () => {
-    if (!selectedWord || !allData) return -1;
-    return allData.findIndex(w => w.id === selectedWord.id);
-  };
+  /* ---------------- Navigation ---------------- */
 
   const navigation = [
-    { name: 'Home', href: '/', icon: Home },
     { name: 'Groups', href: '/groups', icon: BookDownIcon },
     { name: 'Quiz', href: '/quiz', icon: FileQuestion },
-    { name: 'Dashboard', href: '/dashboard', icon: User },
+    { name: 'Login', href: '/login', icon: User },
+    { name: 'Register', href: '/register', icon: User },
   ];
 
-  const isActive = (href) => {
-    if (href === '/') {
-      return pathname === '/';
-    }
-    return pathname.startsWith(href);
+  const isActive = (href) => pathname.startsWith(href);
+
+  /* ---------------- Search Handlers ---------------- */
+
+  const handleSearch = () => {
+    if (!search.trim()) return;
+    router.push(`/search?q=${search}`);
+  };
+
+  const handleSort = (type) => {
+    router.push(`/?sort=${type}`);
   };
 
   return (
-  <div>
-      <header className="sticky top-0 z-30 w-full bg-white/10 dark:bg-slate-950/30 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center gap-8">
-            <Link
-              href="/"
-              className="flex items-center gap-2 text-[#F4C1C4] dark:text-primary-400 hover:opacity-80 transition-opacity"
-            >
-              <BookOpen className="w-8 h-8 sm:inline-block hidden" />
-              <span className="text-xl font-bold sm:inline-block">
+    <div>
+      {/* ================= HEADER ================= */}
+      <header className="w-full bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex h-16 items-center justify-between">
+
+            {/* LEFT SIDE */}
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center">
                 <Image
                   src={logo}
                   alt="Logo"
-                  width={120}
-                  height={50}
+                  width={150}
+                  height={40}
                   priority
                 />
-              </span>
-            </Link>
+              </Link>
 
-            <nav className="hidden md:flex items-center gap-1">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
+              <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
+                {navigation.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
 
-                return (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={cn(
-                      'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                      active
-                        ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-red-400'
-                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100'
-                    )}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.href}
+                      className={`flex items-center gap-1 transition ${
+                        active
+                          ? 'text-blue-600'
+                          : 'text-blue-600 hover:underline'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 hidden" />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>
 
-          <div className="flex items-center gap-2">
-            {/* Fixed onClick handler */}
-            <button
-              onClick={handleOpenModal} // Fixed: directly call the function
-              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Open word modal"
-            >
-              <Speech />
-            </button>
+            {/* RIGHT SIDE */}
+            <div className="hidden md:flex items-center gap-6">
 
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-              aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
-            >
-              {theme === 'light' ? (
-                <Moon className="w-5 h-5" />
-              ) : (
-                <Sun className="w-5 h-5" />
-              )}
-            </button>
+              {/* Sort Buttons */}
+              <div className="flex items-center border border-gray-300 rounded-full overflow-hidden">
+                <button
+                  onClick={() => handleSort('random')}
+                  className="px-4 py-1.5 bg-orange-500 text-white text-sm font-semibold"
+                >
+                  Random
+                </button>
+                <button
+                  onClick={() => handleSort('az')}
+                  className="px-4 py-1.5 text-sm font-semibold text-red-600 hover:bg-gray-50"
+                >
+                  A-Z
+                </button>
+                <button
+                  onClick={() => handleSort('newest')}
+                  className="px-4 py-1.5 text-sm font-semibold text-red-600 hover:bg-gray-50"
+                >
+                  Newest
+                </button>
+              </div>
 
-            <button
-              onClick={() => router.push('/login')}
-              className="p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Help and voice commands"
-            >
-              Login
-            </button>
+              {/* Search */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  placeholder="Search"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                  className="w-64 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
+                />
+                <button
+                  onClick={handleSearch}
+                  className="px-4 py-2 text-sm font-semibold text-green-700 border border-green-700 rounded-md hover:bg-green-50 transition"
+                >
+                  Search
+                </button>
+              </div>
 
+              {/* Speech Button */}
+              <button
+                onClick={handleOpenModal}
+                className="p-2 rounded-md hover:bg-gray-100"
+              >
+                <Speech className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* MOBILE MENU BUTTON */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Toggle menu"
+              className="md:hidden p-2"
             >
-              {mobileMenuOpen ? (
-                <X className="w-5 h-5" />
-              ) : (
-                <Menu className="w-5 h-5" />
-              )}
+              {mobileMenuOpen ? <X /> : <Menu />}
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 dark:border-slate-800 animate-slide-down">
-          <div className="px-4 py-4 space-y-2">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.href);
-
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={cn(
-                    'flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200',
-                    active
-                      ? 'bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-slate-100'
-                  )}
-                >
-                  <Icon className="w-5 h-5" />
-                  {item.name}
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      
-    </header>
-
-    <WordModal
-        locationPath = 'header'
+      {/* ================= WORD MODAL ================= */}
+      <WordModal
+        locationPath="header"
         word={selectedWord}
         onNext={() => onNext(getCurrentIndex())}
         onPrevious={() => onPrevious(getCurrentIndex())}
@@ -205,6 +191,6 @@ export function Header({ onOpenHelp }) {
         currentIndex={getCurrentIndex()}
         totalWords={allData ? allData.length : 0}
       />
-  </div>
+    </div>
   );
 }
