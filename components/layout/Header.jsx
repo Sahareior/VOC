@@ -75,7 +75,7 @@ export function Header() {
   return (
     <div>
       {/* ================= HEADER ================= */}
-      <header className="w-full bg-white border-b border-gray-200">
+      <header className="sticky top-0 z-50 w-full bg-white shadow-lg border-b py-1 border-gray-200">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex h-16 items-center justify-between">
 
@@ -85,13 +85,13 @@ export function Header() {
                 <Image
                   src={logo}
                   alt="Logo"
-                  width={150}
-                  height={40}
+                  width={190}
+                  height={60}
                   priority
                 />
               </Link>
 
-              <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
+              <nav className="hidden md:flex items-center gap-6 text-md font-bold">
                 {navigation.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
@@ -100,17 +100,22 @@ export function Header() {
                     <Link
                       key={item.name}
                       href={item.href}
-                      className={`flex items-center gap-1 transition ${
-                        active
-                          ? 'text-blue-600'
-                          : 'text-blue-600 hover:underline'
-                      }`}
+                      className={`flex items-center gap-1 transition ${active
+                        ? 'text-blue-600'
+                        : 'text-blue-600 hover:underline'
+                        }`}
                     >
                       <Icon className="w-4 h-4 hidden" />
                       {item.name}
                     </Link>
                   );
                 })}
+                <button
+                  onClick={handleOpenModal}
+                  className="p-2 rounded-md flex items-center gap-2 bg-red-100 hover:bg-gray-100"
+                >
+                  <Speech className="w-5 h-5 text-gray-600" /> <p>Audio</p>
+                </button>
               </nav>
             </div>
 
@@ -118,22 +123,22 @@ export function Header() {
             <div className="hidden md:flex items-center gap-6">
 
               {/* Sort Buttons */}
-              <div className="flex items-center border border-gray-300 rounded-full overflow-hidden">
+              <div className="flex items-center border font-bold border-yellow-500 rounded-full overflow-hidden">
                 <button
                   onClick={() => handleSort('random')}
-                  className="px-4 py-1.5 bg-orange-500 text-white text-sm font-semibold"
+                  className="px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold"
                 >
                   Random
                 </button>
                 <button
                   onClick={() => handleSort('az')}
-                  className="px-4 py-1.5 text-sm font-semibold text-red-600 hover:bg-gray-50"
+                  className="px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-gray-50"
                 >
                   A-Z
                 </button>
                 <button
                   onClick={() => handleSort('newest')}
-                  className="px-4 py-1.5 text-sm font-semibold text-red-600 hover:bg-gray-50"
+                  className="px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-gray-50"
                 >
                   Newest
                 </button>
@@ -158,12 +163,7 @@ export function Header() {
               </div>
 
               {/* Speech Button */}
-              <button
-                onClick={handleOpenModal}
-                className="p-2 rounded-md hover:bg-gray-100"
-              >
-                <Speech className="w-5 h-5 text-gray-600" />
-              </button>
+
             </div>
 
             {/* MOBILE MENU BUTTON */}

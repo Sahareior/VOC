@@ -20,7 +20,7 @@ export const WordCard = ({ word }) => {
     <>
       <div
         onClick={handleOpenDetail}
-        className="w-full max-w-md bg-[#f3f3f3] border border-gray-300 rounded-md overflow-hidden cursor-pointer"
+        className="w-full max-w-md bg-white border border-gray-200 rounded-lg overflow-hidden cursor-pointer shadow-card hover:shadow-card-hover transition-shadow duration-300"
       >
         {/* Header */}
         <div className="relative px-4 pt-3 pb-2 text-center border-b border-gray-300">
@@ -40,14 +40,14 @@ export const WordCard = ({ word }) => {
           </div>
 
           {/* Category */}
-          <div className="text-red-600 font-semibold text-sm">
+          <div className="text-red-600 text-xl font-bold">
             {word.category?.name}
           </div>
 
           {/* Sentences text */}
-          <span 
+          <span
             onClick={handleOpenSentences}
-            className="absolute right-4 top-3 text-xs text-red-600 hover:underline decoration-red-600"
+            className="absolute right-4 top-3 text-md font-bold text-amber-600 hover:underline decoration-red-600"
           >
             sentences
           </span>
@@ -55,8 +55,8 @@ export const WordCard = ({ word }) => {
 
         {/* Word + Definition */}
         <div className="px-4 py-4">
-          <p className="text-base leading-relaxed">
-            <span className="text-red-600 font-bold text-lg">
+          <p className=" leading-relaxed text-xl">
+            <span className="text-red-600 font-bold text-xl">
               {word.name}
             </span>{' '}
             - {word.definition}
@@ -83,7 +83,7 @@ export const WordCard = ({ word }) => {
         </div>
       </div>
 
-      <SentenceModal 
+      <SentenceModal
         word={word}
         isOpen={isSentenceModalOpen}
         onClose={() => setIsSentenceModalOpen(false)}

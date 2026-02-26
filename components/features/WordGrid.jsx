@@ -11,6 +11,8 @@ import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import GroupsFiltter from '../../app/homepage-component/GroupsFiltter';
 import { DUMMY_WORDS } from '../../lib/dummyData';
+import PaginationButtons from '../ui/PaginationButtons'
+import { Pagination } from 'antd';
 
 
 
@@ -22,12 +24,12 @@ const SORT_OPTIONS = [
   { key: 'id', label: 'Newest' },
 ];
 
-export function WordGrid({ onOpenModal, onWordsUpdate,groupPageData}) {
+export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
   const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
-const getItemsPerPage = () => {
-  if (typeof window === 'undefined') return 20; // SSR safety
-  return window.innerWidth < 768 ? 10 : 20;
-};
+  const getItemsPerPage = () => {
+    if (typeof window === 'undefined') return 20; // SSR safety
+    return window.innerWidth < 768 ? 10 : 20;
+  };
 
   const gridContainerRef = useRef(null);
   const [activeSort, setActiveSort] = useState('id');
@@ -36,34 +38,34 @@ const getItemsPerPage = () => {
   const [itemsPerPage] = useState(getItemsPerPage);
   const [hasPaginated, setHasPaginated] = useState(false);
   const [isSearchMode, setIsSearchMode] = useState(false);
-  const [groupsData,setGroupsData] = useState([])
+  const [groupsData, setGroupsData] = useState([])
   const searchTimeoutRef = useRef(null);
 
-  const {setAllData} = useUser()
+  const { setAllData } = useUser()
 
-  const { 
-    data: paginatedData, 
-    isLoading: isLoadingPaginated, 
-    error, 
-    refetch 
+  const {
+    data: paginatedData,
+    isLoading: isLoadingPaginated,
+    error,
+    refetch
   } = useGetWordsQuery({
     offset: (currentPage - 1) * itemsPerPage,
     limit: 20,
     sort: activeSort,
   }, {
-    skip: isSearchMode, 
+    skip: isSearchMode,
   });
 
   const [
-    triggerSearch, 
-    { 
-      data: searchData, 
+    triggerSearch,
+    {
+      data: searchData,
       isLoading: isSearchLoading,
       isFetching: isSearchFetching
     }
   ] = useLazyGetSearchWordsQuery();
 
- 
+
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -86,37 +88,37 @@ const getItemsPerPage = () => {
     };
   }, [searchQuery, triggerSearch]);
 
-  
-const transformSearchResults = useCallback((results) => {
-  if (!Array.isArray(results)) return [];
 
-  return results.map((item) => ({
-    // REQUIRED
-    id: item.id,
-    name: item.name ?? item.slug,
-    slug: item.slug,
-    term: item.name ?? item.slug,
+  const transformSearchResults = useCallback((results) => {
+    if (!Array.isArray(results)) return [];
 
-    // CONTENT
-    sentence: item.sentence ?? '',
-    definition: item.definition ?? '',
-    type: item.type ?? 'noun',
-    image: item.image ?? '',
+    return results.map((item) => ({
+      // REQUIRED
+      id: item.id,
+      name: item.name ?? item.slug,
+      slug: item.slug,
+      term: item.name ?? item.slug,
 
-    // ✅ REAL backend data (no hardcoding)
-    category: item.category ?? null,
-    subcategory: item.subcategory ?? null,
+      // CONTENT
+      sentence: item.sentence ?? '',
+      definition: item.definition ?? '',
+      type: item.type ?? 'noun',
+      image: item.image ?? '',
 
-    // OPTIONAL (WordCard-safe defaults)
-    phonetic: item.phonetic ?? '',
-    difficulty: item.difficulty ?? 'beginner',
-    synonyms: item.synonyms ?? [],
-    antonyms: item.antonyms ?? [],
-    example: item.example ?? item.sentence ?? '',
+      // ✅ REAL backend data (no hardcoding)
+      category: item.category ?? null,
+      subcategory: item.subcategory ?? null,
 
-    createdAt: item.createdAt ?? new Date().toISOString(),
-  }));
-}, []);
+      // OPTIONAL (WordCard-safe defaults)
+      phonetic: item.phonetic ?? '',
+      difficulty: item.difficulty ?? 'beginner',
+      synonyms: item.synonyms ?? [],
+      antonyms: item.antonyms ?? [],
+      example: item.example ?? item.sentence ?? '',
+
+      createdAt: item.createdAt ?? new Date().toISOString(),
+    }));
+  }, []);
 
 
   // Optimize currentWords calculation
@@ -127,22 +129,22 @@ const transformSearchResults = useCallback((results) => {
       setAllData(transformSearchResults(wordArray))
       return transformSearchResults(wordArray);
     }
-    if(groupsData?.length> 0){
+    if (groupsData?.length > 0) {
       setAllData(groupsData)
       return groupsData
     }
 
-    if(groupPageData?.length > 0){
-       setAllData(groupPageData)
+    if (groupPageData?.length > 0) {
+      setAllData(groupPageData)
       return groupPageData
     }
-    
+
     const apiWords = paginatedData?.words || [];
     const finalWords = apiWords.length > 0 ? apiWords : DUMMY_WORDS;
-    
+
     setAllData(finalWords)
     return finalWords;
-  }, [isSearchMode, searchData, paginatedData, transformSearchResults,groupsData,groupPageData, setAllData]);
+  }, [isSearchMode, searchData, paginatedData, transformSearchResults, groupsData, groupPageData, setAllData]);
 
   // Debounce onWordsUpdate to reduce parent re-renders
   const prevWordsRef = useRef();
@@ -153,16 +155,16 @@ const transformSearchResults = useCallback((results) => {
     }
   }, [currentWords, onWordsUpdate]);
 
-  const isLoading = isSearchMode 
-    ? isSearchLoading || isSearchFetching 
+  const isLoading = isSearchMode
+    ? isSearchLoading || isSearchFetching
     : isLoadingPaginated;
 
-  const totalItems = isSearchMode 
-    ? searchData?.total || currentWords.length 
+  const totalItems = isSearchMode
+    ? searchData?.total || currentWords.length
     : paginatedData?.total || 0;
 
-  const totalPages = isSearchMode 
-    ? 1 
+  const totalPages = isSearchMode
+    ? 1
     : Math.ceil(totalItems / itemsPerPage);
 
   const handleSortChange = useCallback((sortType) => {
@@ -194,17 +196,17 @@ const transformSearchResults = useCallback((results) => {
   useEffect(() => {
     if (currentPage > 1 && gridContainerRef.current) {
       requestAnimationFrame(() => {
-        gridContainerRef.current?.scrollIntoView({ 
-          behavior: 'smooth', 
-          block: 'start' 
+        gridContainerRef.current?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
         });
       });
     }
   }, [currentPage]);
 
 
-console.log(groupsData,'this is groups data')
-console.log(groupPageData,'this is page data')
+  console.log(groupsData, 'this is groups data')
+  console.log(groupPageData, 'this is page data')
 
 
   const handlePagination = useCallback(() => {
@@ -232,8 +234,8 @@ console.log(groupPageData,'this is page data')
         <p className="text-slate-500 dark:text-slate-400 mb-4">
           Please try again later
         </p>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           onClick={() => refetch()}
           className="mt-4"
         >
@@ -259,9 +261,19 @@ console.log(groupPageData,'this is page data')
 
       {currentWords.length > 0 ? (
         <>
-          <div 
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6"
-            style={{ 
+          <div className="py-4">
+            <Pagination
+              align="start"
+              current={currentPage}
+              total={totalItems}
+              pageSize={itemsPerPage}
+              onChange={(page) => setCurrentPage(page)}
+              showSizeChanger={false}
+            />
+          </div>
+          <div
+            className="grid grid-cols-1 my-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6"
+            style={{
               contentVisibility: 'auto',
               containIntrinsicSize: 'auto 500px'
             }}
@@ -278,9 +290,15 @@ console.log(groupPageData,'this is page data')
               />
             ))}
           </div>
-
-          <div className='flex justify-center items-center pt-4'>
-
+          <div className="py-6 border-t border-gray-100 mt-8">
+            <Pagination
+              align="start"
+              current={currentPage}
+              total={totalItems}
+              pageSize={itemsPerPage}
+              onChange={(page) => setCurrentPage(page)}
+              showSizeChanger={false}
+            />
           </div>
         </>
       ) : (
