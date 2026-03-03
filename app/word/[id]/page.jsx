@@ -46,7 +46,7 @@ export default function WordPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center">
         <h1 className="text-2xl font-bold text-slate-900 mb-4">Word Not Found</h1>
-        <button 
+        <button
           onClick={() => router.push('/')}
           className="px-6 py-2 bg-slate-900 text-white rounded-lg"
         >
@@ -59,7 +59,7 @@ export default function WordPage() {
   return (
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-6 py-4">
-        <button 
+        <button
           onClick={() => router.back()}
           className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-8 group"
         >
@@ -69,7 +69,7 @@ export default function WordPage() {
           <span className="font-medium">Back</span>
         </button>
 
-        <WordDetailView 
+        <WordDetailView
           word={word}
           isFavorite={isFavorite(String(word.id))}
           onToggleFavorite={toggleFavorite}
@@ -77,6 +77,7 @@ export default function WordPage() {
           onPrevious={currentIndex > 0 ? handlePrevious : null}
           currentIndex={currentIndex}
           totalWords={wordsToSearch.length}
+          onSpeechEnd={currentIndex < wordsToSearch.length - 1 ? handleNext : null}
         />
       </div>
     </div>

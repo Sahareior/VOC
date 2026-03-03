@@ -79,7 +79,10 @@ export const WordCard = ({ word }) => {
 
         {/* Example sentence */}
         <div className="px-4 py-4 text-sm text-gray-800 leading-relaxed">
-          {highlightWord(word.sentence, word.name)}
+          {highlightWord(
+            Array.isArray(word.sentence) ? word.sentence[0] : word.sentence,
+            word.name
+          )}
         </div>
       </div>
 
@@ -96,7 +99,7 @@ export const WordCard = ({ word }) => {
 function highlightWord(sentence, word) {
   if (!sentence || !word) return sentence;
 
-  const parts = sentence.split(new RegExp(`(${word})`, 'gi'));
+  const parts = sentence?.split(new RegExp(`(${word})`, 'gi'));
 
   return (
     <>

@@ -1,60 +1,37 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Search, X, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { WordCard } from './WordCard';
 // import { DUMMY_WORDS } from '../../lib/dummyData';
 
 import { useUser } from '../../contexts/UserContext';
 import { useGetWordsQuery, useLazyGetSearchWordsQuery } from '../../redux/slices/apiSlice';
-import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import GroupsFiltter from '../../app/homepage-component/GroupsFiltter';
 import { DUMMY_WORDS } from '../../lib/dummyData';
-import PaginationButtons from '../ui/PaginationButtons'
-import { Pagination } from 'antd';
+import NavPagination from '../ui/NavPagination'
 
 
 
 
-const SORT_OPTIONS = [
-  { key: 'random', label: 'Random' },
-  { key: 'az', label: 'A-Z' },
-  { key: 'za', label: 'Z-A' },
-  { key: 'id', label: 'Newest' },
-];
+
+
 
 export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
-  const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
+  const { isLearned, isFavorite, toggleLearned, toggleFavorite, searchQuery, activeSort } = useUser();
   const getItemsPerPage = () => {
     if (typeof window === 'undefined') return 20; // SSR safety
-    return window.innerWidth < 768 ? 10 : 20;
+    return window.innerWidth < 768 ? 10 : 12;
   };
 
   const gridContainerRef = useRef(null);
-  const [activeSort, setActiveSort] = useState('id');
-  const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(getItemsPerPage);
-  const [hasPaginated, setHasPaginated] = useState(false);
-  const [isSearchMode, setIsSearchMode] = useState(false);
   const [groupsData, setGroupsData] = useState([])
+  const [isSearchMode, setIsSearchMode] = useState(false);
   const searchTimeoutRef = useRef(null);
-
   const { setAllData } = useUser()
-
-  const {
-    data: paginatedData,
-    isLoading: isLoadingPaginated,
-    error,
-    refetch
-  } = useGetWordsQuery({
-    offset: (currentPage - 1) * itemsPerPage,
-    limit: 20,
-    sort: activeSort,
-  }, {
-    skip: isSearchMode,
-  });
 
   const [
     triggerSearch,
@@ -65,6 +42,23 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
     }
   ] = useLazyGetSearchWordsQuery();
 
+  const {
+    data: paginatedData,
+    isLoading: isLoadingPaginated,
+    error,
+    refetch
+  } = useGetWordsQuery({
+    offset: (currentPage - 1) * itemsPerPage,
+    limit: itemsPerPage,
+    sort: activeSort,
+  }, {
+    skip: isSearchMode
+  });
+
+  // Reset to first page when sort changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [activeSort]);
 
   useEffect(() => {
     if (searchTimeoutRef.current) {
@@ -77,7 +71,6 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
         triggerSearch(searchQuery);
       } else {
         setIsSearchMode(false);
-        setCurrentPage(1);
       }
     }, 300);
 
@@ -93,32 +86,20 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
     if (!Array.isArray(results)) return [];
 
     return results.map((item) => ({
-      // REQUIRED
       id: item.id,
       name: item.name ?? item.slug,
       slug: item.slug,
       term: item.name ?? item.slug,
-
-      // CONTENT
-      sentence: item.sentence ?? '',
+      sentence: item.sentence ?? [],
       definition: item.definition ?? '',
       type: item.type ?? 'noun',
       image: item.image ?? '',
-
-      // ✅ REAL backend data (no hardcoding)
       category: item.category ?? null,
       subcategory: item.subcategory ?? null,
-
-      // OPTIONAL (WordCard-safe defaults)
-      phonetic: item.phonetic ?? '',
-      difficulty: item.difficulty ?? 'beginner',
-      synonyms: item.synonyms ?? [],
-      antonyms: item.antonyms ?? [],
-      example: item.example ?? item.sentence ?? '',
-
-      createdAt: item.createdAt ?? new Date().toISOString(),
     }));
   }, []);
+
+  console.log(paginatedData, 'this is paginated data')
 
 
   // Optimize currentWords calculation
@@ -126,8 +107,9 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
     if (isSearchMode && searchData) {
       const words = searchData?.words || searchData;
       const wordArray = Array.isArray(words) ? words : [];
-      setAllData(transformSearchResults(wordArray))
-      return transformSearchResults(wordArray);
+      const transformed = transformSearchResults(wordArray);
+      setAllData(transformed);
+      return transformed;
     }
     if (groupsData?.length > 0) {
       setAllData(groupsData)
@@ -159,38 +141,29 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
     ? isSearchLoading || isSearchFetching
     : isLoadingPaginated;
 
-  const totalItems = isSearchMode
-    ? searchData?.total || currentWords.length
-    : paginatedData?.total || 0;
-
-  const totalPages = isSearchMode
-    ? 1
-    : Math.ceil(totalItems / itemsPerPage);
-
-  const handleSortChange = useCallback((sortType) => {
-    setActiveSort(sortType);
-    setCurrentPage(1);
-    setHasPaginated(false);
+  const totalItems = useMemo(() => {
     if (isSearchMode) {
-      setIsSearchMode(false);
-      setSearchQuery('');
+      return searchData?.total || searchData?.count || currentWords.length;
     }
-  }, [isSearchMode]);
+    // Check multiple common field names for total count from the API
+    const totalFromApi = paginatedData?.total ?? paginatedData?.count ?? paginatedData?.total_count ?? paginatedData?.totalWords;
+    if (totalFromApi !== undefined) return totalFromApi;
 
-  const handleSearchChange = useCallback((e) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    if (!value.trim()) {
-      setIsSearchMode(false);
-      setCurrentPage(1);
+    // Fallback to the 'total' field within individual word objects if present (as seen in dummyData)
+    if (currentWords.length > 0 && currentWords[0].total) {
+      return currentWords[0].total;
     }
-  }, []);
 
-  const handleClearSearch = useCallback(() => {
-    setSearchQuery('');
-    setIsSearchMode(false);
-    setCurrentPage(1);
-  }, []);
+    // Default to a guess: if the current page is "full", assume there's at least one more page
+    const knownCount = (currentPage - 1) * itemsPerPage + currentWords.length;
+    if (currentWords.length === itemsPerPage) {
+      return knownCount + 1; // This enables the "Next" button
+    }
+
+    return knownCount;
+  }, [isSearchMode, searchData, paginatedData, currentWords, currentPage, itemsPerPage]);
+
+  const totalPages = Math.max(Math.ceil(totalItems / itemsPerPage), 1);
 
   // Optimized smooth scroll
   useEffect(() => {
@@ -261,16 +234,15 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
 
       {currentWords.length > 0 ? (
         <>
-          <div className="py-4">
-            <Pagination
-              align="start"
-              current={currentPage}
-              total={totalItems}
-              pageSize={itemsPerPage}
-              onChange={(page) => setCurrentPage(page)}
-              showSizeChanger={false}
-            />
-          </div>
+          {!isSearchMode && (
+            <div className="py-4">
+              <NavPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
           <div
             className="grid grid-cols-1 my-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 sm:gap-6"
             style={{
@@ -280,7 +252,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
           >
             {currentWords.map((word) => (
               <WordCard
-                key={`${word.id}-${currentPage}-${isSearchMode ? 'search' : 'normal'}`}
+                key={`${word.id}-${currentPage}`}
                 word={word}
                 isLearned={isLearned(String(word.id))}
                 isFavorite={isFavorite(String(word.id))}
@@ -290,16 +262,15 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
               />
             ))}
           </div>
-          <div className="py-6 border-t border-gray-100 mt-8">
-            <Pagination
-              align="start"
-              current={currentPage}
-              total={totalItems}
-              pageSize={itemsPerPage}
-              onChange={(page) => setCurrentPage(page)}
-              showSizeChanger={false}
-            />
-          </div>
+          {!isSearchMode && (
+            <div className="py-6 border-t border-gray-100 mt-8">
+              <NavPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+            </div>
+          )}
         </>
       ) : (
         <div className="text-center py-16">
@@ -314,11 +285,6 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
               ? `Try a different search term for "${searchQuery}"`
               : 'Check back later for new words'}
           </p>
-          {isSearchMode && (
-            <Button variant="outline" onClick={handleClearSearch}>
-              Clear search
-            </Button>
-          )}
         </div>
       )}
     </div>

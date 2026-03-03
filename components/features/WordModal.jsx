@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useCallback, memo, useState, useEffect, useRef } from 'react';
-import { 
-  Volume2, 
-  Heart, 
-  CheckCircle, 
-  Share2, 
-  ChevronLeft, 
+import {
+  Volume2,
+  Heart,
+  CheckCircle,
+  Share2,
+  ChevronLeft,
   ChevronRight,
   BookOpen,
   Sparkles,
@@ -38,7 +38,7 @@ export const WordModal = memo(function WordModal({
   const [isSpeakingAll, setIsSpeakingAll] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
-  
+
   // Use refs to track speech state
   const currentUtteranceRef = useRef(null);
   const speechTimeoutRef = useRef(null);
@@ -51,9 +51,9 @@ export const WordModal = memo(function WordModal({
       clearTimeout(speechTimeoutRef.current);
       speechTimeoutRef.current = null;
     }
-    
+
     window.speechSynthesis.cancel();
-    
+
     if (currentUtteranceRef.current) {
       // Remove event listeners to prevent memory leaks
       const utterance = currentUtteranceRef.current;
@@ -64,7 +64,7 @@ export const WordModal = memo(function WordModal({
       utterance.onstart = null;
       currentUtteranceRef.current = null;
     }
-    
+
     if (isMountedRef.current) {
       setIsSpeakingAll(false);
       setIsPaused(false);
@@ -74,15 +74,15 @@ export const WordModal = memo(function WordModal({
   // Handle pronunciation of all word parts
   const handlePronounceAll = useCallback(async () => {
     if (!word || !isMountedRef.current) return;
-    
+
     // Clean up any existing speech
     cleanupSpeech();
-    
+
     // Small delay to ensure cleanup is complete
     await new Promise(resolve => setTimeout(resolve, 50));
-    
+
     if (!isMountedRef.current) return;
-    
+
     setIsSpeakingAll(true);
     setIsPaused(false);
     autoPlayInitiatedRef.current = true;
@@ -95,19 +95,20 @@ export const WordModal = memo(function WordModal({
       parts.push(word.definition);
     }
     if (word.sentence) {
-      parts.push(`Example: ${word.sentence}`);
+      const firstSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
+      parts.push(`Example: ${firstSentence}`);
     }
 
     let currentPartIndex = 0;
     let isCancelled = false;
-    
+
     const speakNextPart = () => {
       // Check if cancelled or component unmounted
       if (!isMountedRef.current || isCancelled || currentPartIndex >= parts.length) {
         if (isMountedRef.current && !isCancelled) {
           setIsSpeakingAll(false);
           setIsPaused(false);
-          
+
           // Auto navigate to next word if available
           if (onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1) {
             speechTimeoutRef.current = setTimeout(() => {
@@ -124,14 +125,14 @@ export const WordModal = memo(function WordModal({
       const utterance = new SpeechSynthesisUtterance(parts[currentPartIndex]);
       utterance.rate = 0.9;
       utterance.pitch = 1;
-      
+
       utterance.onend = () => {
         if (!isCancelled && isMountedRef.current) {
           currentPartIndex++;
           speechTimeoutRef.current = setTimeout(speakNextPart, 800);
         }
       };
-      
+
       utterance.onerror = (event) => {
         console.error('Speech synthesis error:', event);
         if (isMountedRef.current && !isCancelled) {
@@ -139,13 +140,13 @@ export const WordModal = memo(function WordModal({
           setIsPaused(false);
         }
       };
-      
+
       currentUtteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     };
-    
+
     speakNextPart();
-    
+
     // Return cancellation function
     return () => {
       isCancelled = true;
@@ -167,7 +168,7 @@ export const WordModal = memo(function WordModal({
   // Handle repeat
   const handleRepeat = useCallback(() => {
     cleanupSpeech();
-    
+
     speechTimeoutRef.current = setTimeout(() => {
       if (isMountedRef.current) {
         handlePronounceAll();
@@ -199,7 +200,8 @@ export const WordModal = memo(function WordModal({
   // Handle example pronunciation
   const handlePronounceExample = useCallback(() => {
     if (word?.sentence) {
-      speak(word.sentence);
+      const firstSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
+      speak(firstSentence);
     }
   }, [word, speak]);
 
@@ -221,7 +223,7 @@ export const WordModal = memo(function WordModal({
   useEffect(() => {
     if (shouldAutoPlay && word && isMountedRef.current) {
       cleanupSpeech();
-      
+
       speechTimeoutRef.current = setTimeout(() => {
         if (isMountedRef.current) {
           handlePronounceAll();
@@ -235,7 +237,7 @@ export const WordModal = memo(function WordModal({
   useEffect(() => {
     isMountedRef.current = true;
     autoPlayInitiatedRef.current = false;
-    
+
     return () => {
       isMountedRef.current = false;
       cleanupSpeech();
@@ -291,7 +293,7 @@ export const WordModal = memo(function WordModal({
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             <button
               onClick={handleToggleFavorite}
@@ -319,7 +321,7 @@ export const WordModal = memo(function WordModal({
                   <h1 className="text-2xl font-bold pb-5 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
                     {word.name || word.term}
                   </h1>
-                  
+
                   {word.phonetic && (
                     <div className="flex items-center gap-2 mt-1">
                       <Volume2 className="w-4 h-4 text-slate-400" />
@@ -415,7 +417,7 @@ export const WordModal = memo(function WordModal({
                     `;
                   }}
                 />
-                
+
                 <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                   {onPrevious && currentIndex !== null && currentIndex > 0 && (
                     <button
@@ -431,7 +433,7 @@ export const WordModal = memo(function WordModal({
                       <ChevronLeft className="w-6 h-6 text-slate-600 dark:text-slate-300" />
                     </button>
                   )}
-                  
+
                   {onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1 && (
                     <button
                       onClick={(e) => {
@@ -498,7 +500,7 @@ export const WordModal = memo(function WordModal({
                   </div>
                   <div className="relative">
                     <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[16px] italic">
-                      {word.sentence}
+                      {Array.isArray(word.sentence) ? word.sentence[0] : word.sentence}
                     </p>
                   </div>
                 </div>

@@ -12,12 +12,11 @@ import { WordModal } from '../features/WordModal';
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { allData, isFavorite, toggleLearned, toggleFavorite } = useUser();
+  const { allData, isFavorite, toggleLearned, toggleFavorite, searchQuery, setSearchQuery, activeSort, setActiveSort } = useUser();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedWord, setSelectedWord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [search, setSearch] = useState('');
 
   /* ---------------- Word Modal Logic ---------------- */
 
@@ -64,12 +63,19 @@ export function Header() {
   /* ---------------- Search Handlers ---------------- */
 
   const handleSearch = () => {
-    if (!search.trim()) return;
-    router.push(`/search?q=${search}`);
+    // If we're not on home page, maybe redirect? 
+    // But user says "display search data here in wordgrid", 
+    // implying they are already on the relevant page or want it to happen here.
+    if (pathname !== '/') {
+      router.push(`/?search=${searchQuery}`);
+    }
   };
 
   const handleSort = (type) => {
-    router.push(`/?sort=${type}`);
+    setActiveSort(type);
+    if (pathname !== '/') {
+      router.push(`/?sort=${type}`);
+    }
   };
 
   return (
@@ -126,19 +132,22 @@ export function Header() {
               <div className="flex items-center border font-bold border-yellow-500 rounded-full overflow-hidden">
                 <button
                   onClick={() => handleSort('random')}
-                  className="px-4 py-2.5 bg-orange-500 text-white text-sm font-semibold"
+                  className={`px-4 py-2.5 text-sm font-semibold transition-colors ${activeSort === 'random' ? 'bg-orange-500 text-white' : 'text-red-600 hover:bg-gray-50'
+                    }`}
                 >
                   Random
                 </button>
                 <button
                   onClick={() => handleSort('az')}
-                  className="px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-gray-50"
+                  className={`px-4 py-2.5 text-sm font-semibold border-l border-yellow-500 transition-colors ${activeSort === 'az' ? 'bg-orange-500 text-white' : 'text-red-600 hover:bg-gray-50'
+                    }`}
                 >
                   A-Z
                 </button>
                 <button
-                  onClick={() => handleSort('newest')}
-                  className="px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-gray-50"
+                  onClick={() => handleSort('id')}
+                  className={`px-4 py-2.5 text-sm font-semibold border-l border-yellow-500 transition-colors ${activeSort === 'id' ? 'bg-orange-500 text-white' : 'text-red-600 hover:bg-gray-50'
+                    }`}
                 >
                   Newest
                 </button>
@@ -149,8 +158,8 @@ export function Header() {
                 <input
                   type="text"
                   placeholder="Search"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                   className="w-64 px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-gray-400"
                 />

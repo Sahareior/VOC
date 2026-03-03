@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useCallback, useState, useEffect, useRef } from 'react';
-import { 
-  Volume2, 
+import {
+  Volume2,
   Pause,
   RotateCcw,
   Play,
@@ -18,6 +18,7 @@ export const WordDetailView = ({
   totalWords,
   onNext,
   onPrevious,
+  onSpeechEnd,
 }) => {
   const [isSpeakingAll, setIsSpeakingAll] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -27,22 +28,41 @@ export const WordDetailView = ({
   const currentUtteranceRef = useRef(null);
   const speechTimeoutRef = useRef(null);
   const isMountedRef = useRef(false);
+  const rafRef = useRef(null);
+  const speechStartTimeRef = useRef(null);     // performance.now() when FIRST utterance starts
+  const totalSpeechDurationRef = useRef(0);    // total estimated ms for all parts
+  const utteranceStartTimeRef = useRef(null);  // performance.now() when CURRENT utterance starts
+  const accumulatedRealMsRef = useRef(0);      // real ms spent in already-finished utterances
+  const [totalDurationSec, setTotalDurationSec] = useState(0);
+
+  const stopRaf = useCallback(() => {
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
+  }, []);
 
   const cleanupSpeech = useCallback(() => {
     if (speechTimeoutRef.current) {
       clearTimeout(speechTimeoutRef.current);
       speechTimeoutRef.current = null;
     }
+    stopRaf();
     window.speechSynthesis.cancel();
     if (currentUtteranceRef.current) {
       currentUtteranceRef.current = null;
     }
+    speechStartTimeRef.current = null;
+    utteranceStartTimeRef.current = null;
+    totalSpeechDurationRef.current = 0;
+    accumulatedRealMsRef.current = 0;
     if (isMountedRef.current) {
       setIsSpeakingAll(false);
       setIsPaused(false);
       setAudioProgress(0);
+      setTotalDurationSec(0);
     }
-  }, []);
+  }, [stopRaf]);
 
   const handlePronounceAll = useCallback(async () => {
     if (!word || !isMountedRef.current) return;
@@ -57,29 +77,78 @@ export const WordDetailView = ({
     const parts = [];
     if (word.name || word.term) parts.push(word.name || word.term || '');
     if (word.definition) parts.push(word.definition);
-    if (word.sentence) parts.push(`Example: ${word.sentence}`);
+    if (word.sentence) {
+      const firstSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
+      parts.push(`Example: ${firstSentence}`);
+    }
+
+    // --- Estimate total duration upfront from character count ---
+    // At rate=0.9, speech synthesis does roughly 8 chars/sec.
+    const CHARS_PER_SEC = 8;
+    const gapMs = (parts.length - 1) * 800; // 800ms pauses between parts
+    const totalChars = parts.reduce((s, p) => s + p.length, 0);
+    const estimatedTotalMs = (totalChars / CHARS_PER_SEC) * 1000 + gapMs;
+    totalSpeechDurationRef.current = estimatedTotalMs;
+    accumulatedRealMsRef.current = 0;
+    setTotalDurationSec(Math.ceil(estimatedTotalMs / 1000));
 
     let currentPartIndex = 0;
-    
+
     const speakNextPart = () => {
       if (!isMountedRef.current || currentPartIndex >= parts.length) {
         if (isMountedRef.current) {
           setIsSpeakingAll(false);
           setIsPaused(false);
           setAudioProgress(100);
+          if (typeof onSpeechEnd === 'function') {
+            onSpeechEnd();
+          }
         }
         return;
       }
 
       const utterance = new SpeechSynthesisUtterance(parts[currentPartIndex]);
       utterance.rate = 0.9;
-      utterance.pitch = isMaleVoice ? 1.0 : 1.2; // subtle difference
-      utterance.onend = () => {
-        if (isMountedRef.current) {
-          currentPartIndex++;
-          speechTimeoutRef.current = setTimeout(speakNextPart, 800);
+      utterance.pitch = isMaleVoice ? 1.0 : 1.2;
+
+      utterance.onstart = () => {
+        utteranceStartTimeRef.current = performance.now();
+        if (currentPartIndex === 0) {
+          speechStartTimeRef.current = performance.now();
         }
       };
+
+      utterance.onend = () => {
+        if (!isMountedRef.current) return;
+
+        // Measure real duration of this utterance
+        const realUtterMs = utteranceStartTimeRef.current
+          ? performance.now() - utteranceStartTimeRef.current
+          : 0;
+        accumulatedRealMsRef.current += realUtterMs;
+
+        // Re-estimate total using actual rate from completed chars
+        const completedChars = parts
+          .slice(0, currentPartIndex + 1)
+          .reduce((s, p) => s + p.length, 0);
+        const remainingChars = parts
+          .slice(currentPartIndex + 1)
+          .reduce((s, p) => s + p.length, 0);
+
+        if (completedChars > 0) {
+          const realMsPerChar = accumulatedRealMsRef.current / completedChars;
+          const remainingMs = remainingChars * realMsPerChar;
+          const remainingGaps = (parts.length - 1 - currentPartIndex) * 800;
+          const refined = accumulatedRealMsRef.current + remainingMs + remainingGaps;
+          totalSpeechDurationRef.current = refined;
+          setTotalDurationSec(Math.ceil(refined / 1000));
+        }
+
+        currentPartIndex++;
+        accumulatedRealMsRef.current += 800; // count the pause gap too
+        speechTimeoutRef.current = setTimeout(speakNextPart, 800);
+      };
+
       currentUtteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     };
@@ -105,23 +174,28 @@ export const WordDetailView = ({
     }, 100);
   }, [handlePronounceAll, cleanupSpeech]);
 
-  // Simulate audio progress (≈10 seconds total)
+  // Real-time progress via requestAnimationFrame
   useEffect(() => {
-    let intervalId = null;
-
-    if (isSpeakingAll && !isPaused) {
-      intervalId = setInterval(() => {
-        setAudioProgress((prev) => {
-          const next = prev + 4.2; // ~24 ticks for ~10s
-          return next >= 100 ? 100 : next;
-        });
-      }, 420);
+    if (!isSpeakingAll || isPaused) {
+      stopRaf();
+      return;
     }
 
-    return () => {
-      if (intervalId) clearInterval(intervalId);
+    const tick = () => {
+      if (!isMountedRef.current || !speechStartTimeRef.current) {
+        rafRef.current = requestAnimationFrame(tick);
+        return;
+      }
+      const elapsed = performance.now() - speechStartTimeRef.current;
+      const total = totalSpeechDurationRef.current || 1; // avoid /0
+      const pct = Math.min((elapsed / total) * 100, 99); // cap at 99 until onend fires
+      setAudioProgress(pct);
+      rafRef.current = requestAnimationFrame(tick);
     };
-  }, [isSpeakingAll, isPaused]);
+
+    rafRef.current = requestAnimationFrame(tick);
+    return () => stopRaf();
+  }, [isSpeakingAll, isPaused, stopRaf]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -131,18 +205,40 @@ export const WordDetailView = ({
     };
   }, [cleanupSpeech]);
 
+  // Auto-start speech whenever the word changes (new card loaded)
+  useEffect(() => {
+    if (!word) return;
+    // Small delay so the browser voice list is ready
+    const timer = setTimeout(() => {
+      if (isMountedRef.current) {
+        handlePronounceAll();
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [word?.id]);
+
   if (!word) return null;
 
-  const formatTime = (percent) => {
-    const seconds = Math.floor((percent / 100) * 10);
-    return `0:${seconds.toString().padStart(2, '0')}`;
+  const formatTime = (pct, totalSec) => {
+    const elapsed = Math.floor((pct / 100) * totalSec);
+    const m = Math.floor(elapsed / 60);
+    const s = elapsed % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const highlightedSentence = word.sentence
-    ? word.sentence.replace(
-        new RegExp(`\\b${(word.name || word.term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi'),
-        (match) => `<span class="text-red-600 font-semibold">${match}</span>`
-      )
+  const formatTotalTime = (totalSec) => {
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${m}:${s.toString().padStart(2, '0')}`;
+  };
+
+  const firstSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
+  const highlightedSentence = firstSentence
+    ? firstSentence.replace(
+      new RegExp(`\\b${(word.name || word.term).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi'),
+      (match) => `<span class="text-red-600 font-semibold">${match}</span>`
+    )
     : '';
 
   return (
@@ -174,7 +270,7 @@ export const WordDetailView = ({
         </button>
 
         <div className="tabular-nums text-sm text-slate-500 w-12">
-          {formatTime(audioProgress)}
+          {formatTime(audioProgress, totalDurationSec)}
         </div>
 
         <div className="flex-1 mx-6 h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -185,7 +281,7 @@ export const WordDetailView = ({
         </div>
 
         <div className="tabular-nums text-sm text-slate-500 w-12 text-right">
-          0:10
+          {formatTotalTime(totalDurationSec)}
         </div>
 
         <Volume2 className="ml-6 w-5 h-5 text-slate-400" />
@@ -211,7 +307,7 @@ export const WordDetailView = ({
               </div>
 
               {/* Male toggle */}
-              <div 
+              <div
                 onClick={() => setIsMaleVoice(!isMaleVoice)}
                 className="flex items-center gap-3 bg-emerald-50 px-5 py-2 rounded-3xl cursor-pointer hover:bg-emerald-100 transition-colors"
               >
@@ -263,7 +359,7 @@ export const WordDetailView = ({
             {/* Example sentence */}
             {word.sentence && (
               <div className="px-8 pb-10">
-                <p 
+                <p
                   className="text-xl text-slate-700 leading-relaxed"
                   dangerouslySetInnerHTML={{ __html: highlightedSentence }}
                 />

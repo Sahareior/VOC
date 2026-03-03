@@ -11,11 +11,10 @@ export const SentenceModal = ({ word, isOpen, onClose }) => {
 
   if (!word) return null;
 
-  // Dummy sentences for now
-  const dummySentences = Array.from({ length: 20 }, (_, i) => ({
-    id: i,
-    text: `This is example sentence number ${i + 1} containing the word ${word.name} in a realistic context for better understanding.`
-  }));
+  // Using actual sentences from the API
+  const sentences = Array.isArray(word.sentence)
+    ? word.sentence.map((text, i) => ({ id: i, text }))
+    : [{ id: 0, text: word.sentence }];
 
   const highlightWord = (sentence, targetWord) => {
     if (!sentence || !targetWord) return sentence;
@@ -61,7 +60,7 @@ export const SentenceModal = ({ word, isOpen, onClose }) => {
       }}
     >
       <List
-        dataSource={dummySentences}
+        dataSource={sentences}
         renderItem={(item) => (
           <List.Item
             key={item.id}

@@ -33,6 +33,8 @@ export function UserProvider({ children }) {
   const [state, setState] = useState(INITIAL_STATE);
   const [isLoaded, setIsLoaded] = useState(false);
   const [allData, setAllData] = useState([])
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeSort, setActiveSort] = useState('id');
 
   useEffect(() => {
     const savedState = storage.get(STORAGE_KEY, INITIAL_STATE);
@@ -112,6 +114,10 @@ export function UserProvider({ children }) {
     toggleLearned,
     setAllData,
     allData,
+    searchQuery,
+    setSearchQuery,
+    activeSort,
+    setActiveSort,
     toggleFavorite,
     isLearned,
     isFavorite,

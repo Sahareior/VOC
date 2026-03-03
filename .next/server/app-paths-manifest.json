@@ -1,7 +1,4 @@
 {
   "/page": "app/page.js",
-  "/word/[id]/page": "app/word/[id]/page.js",
-  "/(navbar_routes)/quiz/page": "app/(navbar_routes)/quiz/page.js",
-  "/login/page": "app/login/page.js",
-  "/(navbar_routes)/groups/page": "app/(navbar_routes)/groups/page.js"
+  "/word/[id]/page": "app/word/[id]/page.js"
 }
