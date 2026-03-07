@@ -5,27 +5,39 @@ import { useParams, useRouter } from 'next/navigation';
 import { WordDetailView } from '../../../components/features/WordDetailView';
 import { DUMMY_WORDS } from '../../../lib/dummyData';
 import { useUser } from '../../../contexts/UserContext';
-import { ChevronLeft } from 'lucide-react';
+import { useGetWordsQuery } from '../../../redux/slices/apiSlice';
+import { ChevronLeft, Loader2 } from 'lucide-react';
 
 export default function WordPage() {
   const { id } = useParams();
   const router = useRouter();
-  const { allData, toggleFavorite, isFavorite } = useUser();
+  const { allData, toggleFavorite, isFavorite, activeSort } = useUser();
 
   const wordId = Number(id);
 
-  // Use allData from context if available, fallback to DUMMY_WORDS
+  // Fetch words if they are not in context (paged refresh safety)
+  // We fetch a larger batch here to increase chance of finding the word and supporting next navigation
+  const { data: apiData, isLoading } = useGetWordsQuery({
+    offset: 0,
+    limit: 100, // Fetch more to cover refresh scenarios
+    sort: activeSort || 'id',
+  }, {
+    skip: allData && allData.length > 0 // Only fetch if we don't have data in context
+  });
+
+  // Use allData from context if available, otherwise use API data or fallback to DUMMY_WORDS
   const wordsToSearch = useMemo(() => {
     if (allData && allData.length > 0) return allData;
+    if (apiData?.words && apiData.words.length > 0) return apiData.words;
     return DUMMY_WORDS;
-  }, [allData]);
+  }, [allData, apiData]);
 
   const word = useMemo(() => {
-    return wordsToSearch.find(w => w.id === wordId);
+    return wordsToSearch.find(w => Number(w.id) === wordId);
   }, [wordsToSearch, wordId]);
 
   const currentIndex = useMemo(() => {
-    return wordsToSearch.findIndex(w => w.id === wordId);
+    return wordsToSearch.findIndex(w => Number(w.id) === wordId);
   }, [wordsToSearch, wordId]);
 
   const handleNext = () => {
@@ -41,6 +53,15 @@ export default function WordPage() {
       router.push(`/word/${prevWord.id}`);
     }
   };
+
+  if (isLoading && (!allData || allData.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <Loader2 className="w-12 h-12 text-orange-500 animate-spin mb-4" />
+        <p className="text-slate-500">Loading word details...</p>
+      </div>
+    );
+  }
 
   if (!word) {
     return (
@@ -60,7 +81,7 @@ export default function WordPage() {
     <div className="min-h-screen bg-white">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <button
-          onClick={() => router.back()}
+          onClick={() => router.push('/')}
           className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-8 group"
         >
           <div className="p-2 rounded-full group-hover:bg-slate-100">
@@ -77,7 +98,7 @@ export default function WordPage() {
           onPrevious={currentIndex > 0 ? handlePrevious : null}
           currentIndex={currentIndex}
           totalWords={wordsToSearch.length}
-          onSpeechEnd={currentIndex < wordsToSearch.length - 1 ? handleNext : null}
+          onSpeechEnd={handleNext} // Always trigger handleNext, it has its own boundary check
         />
       </div>
     </div>

@@ -2,9 +2,9 @@
 
 import React, { useCallback, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { WordGrid } from '../../../../components/features/WordGrid';
+
 import { useUser } from '../../../../contexts/UserContext';
-import { WordModal } from '../../../../components/features/WordModal';
+
 import { useGetWordsByGroupsQuery } from '../../../../redux/slices/apiSlice';
 
 const IndividualGroup = ({params}) => {
@@ -66,28 +66,6 @@ const IndividualGroup = ({params}) => {
       <h1 className="text-2xl mb-24  md:text-3xl font-semibold text-center">
         Select your word by your favorite group!
       </h1>
-
-     <div>
-
-       <WordGrid
-        onOpenModal={handleOpenModal} 
-              onWordsUpdate={setDisplayWords}
-              groupPageData={data}
-       />
-     </div>
-
-         <WordModal
-                 word={selectedWord}
-                 onNext={onNext}
-                 onPrevious={onPrevious}
-                 isOpen={isModalOpen}
-                 isFavorite={selectedWord ? isFavorite(String(selectedWord.id)) : false}
-                 onClose={handleCloseModal}
-                 onToggleFavorite={toggleFavorite}
-                 onToggleLearned={toggleLearned}
-                 currentIndex={selectedWord ? displayWords.findIndex(w => w.id === selectedWord.id) : null}
-                 totalWords={displayWords.length}
-               />
     </div>
   );
 };

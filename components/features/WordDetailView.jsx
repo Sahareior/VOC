@@ -23,46 +23,26 @@ export const WordDetailView = ({
   const [isSpeakingAll, setIsSpeakingAll] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [isMaleVoice, setIsMaleVoice] = useState(true);
-  const [audioProgress, setAudioProgress] = useState(0);
 
   const currentUtteranceRef = useRef(null);
   const speechTimeoutRef = useRef(null);
   const isMountedRef = useRef(false);
-  const rafRef = useRef(null);
-  const speechStartTimeRef = useRef(null);     // performance.now() when FIRST utterance starts
-  const totalSpeechDurationRef = useRef(0);    // total estimated ms for all parts
-  const utteranceStartTimeRef = useRef(null);  // performance.now() when CURRENT utterance starts
-  const accumulatedRealMsRef = useRef(0);      // real ms spent in already-finished utterances
-  const [totalDurationSec, setTotalDurationSec] = useState(0);
 
-  const stopRaf = useCallback(() => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-  }, []);
 
   const cleanupSpeech = useCallback(() => {
     if (speechTimeoutRef.current) {
       clearTimeout(speechTimeoutRef.current);
       speechTimeoutRef.current = null;
     }
-    stopRaf();
     window.speechSynthesis.cancel();
     if (currentUtteranceRef.current) {
       currentUtteranceRef.current = null;
     }
-    speechStartTimeRef.current = null;
-    utteranceStartTimeRef.current = null;
-    totalSpeechDurationRef.current = 0;
-    accumulatedRealMsRef.current = 0;
     if (isMountedRef.current) {
       setIsSpeakingAll(false);
       setIsPaused(false);
-      setAudioProgress(0);
-      setTotalDurationSec(0);
     }
-  }, [stopRaf]);
+  }, []);
 
   const handlePronounceAll = useCallback(async () => {
     if (!word || !isMountedRef.current) return;
@@ -72,34 +52,52 @@ export const WordDetailView = ({
 
     setIsSpeakingAll(true);
     setIsPaused(false);
-    setAudioProgress(0);
 
-    const parts = [];
-    if (word.name || word.term) parts.push(word.name || word.term || '');
-    if (word.definition) parts.push(word.definition);
+    const parts = [
+      `The word is, ${word.name || word.term}.`,
+      `The definition is, ${word.definition}.`,
+    ];
+
     if (word.sentence) {
       const firstSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
-      parts.push(`Example: ${firstSentence}`);
+      parts.push(`An example is, ${firstSentence}`);
     }
 
-    // --- Estimate total duration upfront from character count ---
-    // At rate=0.9, speech synthesis does roughly 8 chars/sec.
-    const CHARS_PER_SEC = 8;
-    const gapMs = (parts.length - 1) * 800; // 800ms pauses between parts
-    const totalChars = parts.reduce((s, p) => s + p.length, 0);
-    const estimatedTotalMs = (totalChars / CHARS_PER_SEC) * 1000 + gapMs;
-    totalSpeechDurationRef.current = estimatedTotalMs;
-    accumulatedRealMsRef.current = 0;
-    setTotalDurationSec(Math.ceil(estimatedTotalMs / 1000));
-
     let currentPartIndex = 0;
+
+    const getVoice = (isMale) => {
+      const voices = window.speechSynthesis.getVoices();
+      const targetGender = isMale ? 'male' : 'female';
+
+      // 1. Try to find by explicit gender keyword, being careful about "female" containing "male"
+      let preferred = voices.find(v => {
+        const name = v.name.toLowerCase();
+        if (isMale) {
+          return name.includes('male') && !name.includes('female') && v.lang.startsWith('en');
+        } else {
+          return name.includes('female') && v.lang.startsWith('en');
+        }
+      });
+
+      // 2. Try common Windows/Google names if not found
+      if (!preferred) {
+        const maleNames = ['david', 'mark', 'james', 'richard', 'george', 'stefan'];
+        const femaleNames = ['zira', 'linda', 'susan', 'catherine', 'mary', 'hazel'];
+        const targetNames = isMale ? maleNames : femaleNames;
+
+        preferred = voices.find(v =>
+          targetNames.some(name => v.name.toLowerCase().includes(name)) && v.lang.startsWith('en')
+        );
+      }
+
+      return preferred || voices.find(v => v.lang.startsWith('en'));
+    };
 
     const speakNextPart = () => {
       if (!isMountedRef.current || currentPartIndex >= parts.length) {
         if (isMountedRef.current) {
           setIsSpeakingAll(false);
           setIsPaused(false);
-          setAudioProgress(100);
           if (typeof onSpeechEnd === 'function') {
             onSpeechEnd();
           }
@@ -108,52 +106,27 @@ export const WordDetailView = ({
       }
 
       const utterance = new SpeechSynthesisUtterance(parts[currentPartIndex]);
-      utterance.rate = 0.9;
-      utterance.pitch = isMaleVoice ? 1.0 : 1.2;
+      const selectedVoice = getVoice(isMaleVoice);
+      if (selectedVoice) {
+        utterance.voice = selectedVoice;
+      }
 
-      utterance.onstart = () => {
-        utteranceStartTimeRef.current = performance.now();
-        if (currentPartIndex === 0) {
-          speechStartTimeRef.current = performance.now();
-        }
-      };
+      utterance.rate = 0.85; // Slightly slower for more "narrative" feel
+      utterance.pitch = isMaleVoice ? 1.0 : 1.15;
 
       utterance.onend = () => {
         if (!isMountedRef.current) return;
 
-        // Measure real duration of this utterance
-        const realUtterMs = utteranceStartTimeRef.current
-          ? performance.now() - utteranceStartTimeRef.current
-          : 0;
-        accumulatedRealMsRef.current += realUtterMs;
-
-        // Re-estimate total using actual rate from completed chars
-        const completedChars = parts
-          .slice(0, currentPartIndex + 1)
-          .reduce((s, p) => s + p.length, 0);
-        const remainingChars = parts
-          .slice(currentPartIndex + 1)
-          .reduce((s, p) => s + p.length, 0);
-
-        if (completedChars > 0) {
-          const realMsPerChar = accumulatedRealMsRef.current / completedChars;
-          const remainingMs = remainingChars * realMsPerChar;
-          const remainingGaps = (parts.length - 1 - currentPartIndex) * 800;
-          const refined = accumulatedRealMsRef.current + remainingMs + remainingGaps;
-          totalSpeechDurationRef.current = refined;
-          setTotalDurationSec(Math.ceil(refined / 1000));
-        }
-
         currentPartIndex++;
-        accumulatedRealMsRef.current += 800; // count the pause gap too
-        speechTimeoutRef.current = setTimeout(speakNextPart, 800);
+        // Slightly longer pause between narrative parts
+        speechTimeoutRef.current = setTimeout(speakNextPart, 1000);
       };
 
       currentUtteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     };
     speakNextPart();
-  }, [word, cleanupSpeech, isMaleVoice]);
+  }, [word, cleanupSpeech, isMaleVoice, onSpeechEnd]);
 
   const handlePause = useCallback(() => {
     if (window.speechSynthesis.speaking) {
@@ -174,28 +147,6 @@ export const WordDetailView = ({
     }, 100);
   }, [handlePronounceAll, cleanupSpeech]);
 
-  // Real-time progress via requestAnimationFrame
-  useEffect(() => {
-    if (!isSpeakingAll || isPaused) {
-      stopRaf();
-      return;
-    }
-
-    const tick = () => {
-      if (!isMountedRef.current || !speechStartTimeRef.current) {
-        rafRef.current = requestAnimationFrame(tick);
-        return;
-      }
-      const elapsed = performance.now() - speechStartTimeRef.current;
-      const total = totalSpeechDurationRef.current || 1; // avoid /0
-      const pct = Math.min((elapsed / total) * 100, 99); // cap at 99 until onend fires
-      setAudioProgress(pct);
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => stopRaf();
-  }, [isSpeakingAll, isPaused, stopRaf]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -207,31 +158,67 @@ export const WordDetailView = ({
 
   // Auto-start speech whenever the word changes (new card loaded)
   useEffect(() => {
-    if (!word) return;
-    // Small delay so the browser voice list is ready
-    const timer = setTimeout(() => {
+    if (!word?.id || !isMountedRef.current) return;
+
+    let interactionHappened = false;
+
+    const startSpeech = () => {
       if (isMountedRef.current) {
         handlePronounceAll();
       }
-    }, 300);
-    return () => clearTimeout(timer);
+    };
+
+    // Browsers block audio until a user gesture. We can "capture" the first gesture anywhere on the page.
+    const unblockAndStart = () => {
+      if (interactionHappened) return;
+      interactionHappened = true;
+      startSpeech();
+      window.removeEventListener('click', unblockAndStart);
+      window.removeEventListener('keydown', unblockAndStart);
+    };
+
+    // Check if voices are loaded (essential for first load)
+    const checkAndStart = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        // Try to start immediately (works if navigations unblocked it previously)
+        startSpeech();
+      } else {
+        // Wait for voiceschanged if they aren't ready
+        const voiceChangeHandler = () => {
+          window.speechSynthesis.onvoiceschanged = null;
+          startSpeech();
+        };
+        window.speechSynthesis.onvoiceschanged = voiceChangeHandler;
+        setTimeout(() => {
+          if (window.speechSynthesis.onvoiceschanged === voiceChangeHandler) {
+            window.speechSynthesis.onvoiceschanged = null;
+            startSpeech();
+          }
+        }, 1500);
+      }
+    };
+
+    // 1. Listen for first interaction to unblock browser audio policy
+    window.addEventListener('click', unblockAndStart);
+    window.addEventListener('keydown', unblockAndStart);
+
+    // 2. Also try auto-starting after a delay (works if already unblocked by previous navigations)
+    const timer = setTimeout(checkAndStart, 600);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('click', unblockAndStart);
+      window.removeEventListener('keydown', unblockAndStart);
+      window.speechSynthesis.onvoiceschanged = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [word?.id]);
 
   if (!word) return null;
 
-  const formatTime = (pct, totalSec) => {
-    const elapsed = Math.floor((pct / 100) * totalSec);
-    const m = Math.floor(elapsed / 60);
-    const s = elapsed % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
 
-  const formatTotalTime = (totalSec) => {
-    const m = Math.floor(totalSec / 60);
-    const s = totalSec % 60;
-    return `${m}:${s.toString().padStart(2, '0')}`;
-  };
+
 
   const firstSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
   const highlightedSentence = firstSentence
@@ -246,8 +233,8 @@ export const WordDetailView = ({
       {/* Top header */}
       <div className="flex items-center justify-between mb-6">
         <div className="text-2xl font-semibold">
-          <span className="text-blue-600">Other-</span>
-          <span className="text-red-600"> {totalWords || 3213}</span>
+          <span className="text-blue-600">{word?.category?.name}</span>
+          <span className="text-red-600"> {totalWords}</span>
         </div>
         <button
           className="bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white px-8 py-2.5 rounded-3xl font-bold text-sm tracking-wide shadow-sm transition-all"
@@ -256,37 +243,6 @@ export const WordDetailView = ({
         </button>
       </div>
 
-      {/* Audio player bar */}
-      <div className="bg-white border border-slate-200 rounded-3xl flex items-center px-6 py-4 mb-8 shadow-sm">
-        <button
-          onClick={isSpeakingAll && !isPaused ? handlePause : handlePronounceAll}
-          className="mr-5 text-slate-700 hover:text-slate-900 transition-colors"
-        >
-          {isSpeakingAll && !isPaused ? (
-            <Pause className="w-8 h-8" />
-          ) : (
-            <Play className="w-8 h-8" />
-          )}
-        </button>
-
-        <div className="tabular-nums text-sm text-slate-500 w-12">
-          {formatTime(audioProgress, totalDurationSec)}
-        </div>
-
-        <div className="flex-1 mx-6 h-1.5 bg-slate-200 rounded-full overflow-hidden">
-          <div
-            className="h-1.5 bg-slate-900 rounded-full transition-all duration-300"
-            style={{ width: `${audioProgress}%` }}
-          />
-        </div>
-
-        <div className="tabular-nums text-sm text-slate-500 w-12 text-right">
-          {formatTotalTime(totalDurationSec)}
-        </div>
-
-        <Volume2 className="ml-6 w-5 h-5 text-slate-400" />
-        <div className="ml-4 text-slate-400 text-xl leading-none">⋯</div>
-      </div>
 
       <div className="flex gap-8">
         {/* Main content card */}
@@ -300,19 +256,24 @@ export const WordDetailView = ({
                 </div>
                 <div className="text-slate-600 font-medium text-lg">
                   <span className="text-red-600 font-semibold">
-                    {currentIndex !== undefined && totalWords ? currentIndex + 1 : 1139}
+                    {currentIndex !== undefined && totalWords ? currentIndex + 1 : 'N/A'}
                   </span>{' '}
-                  of {totalWords || 3213}
+                  of {totalWords || 'N/A'}
                 </div>
               </div>
 
               {/* Male toggle */}
               <div
                 onClick={() => setIsMaleVoice(!isMaleVoice)}
-                className="flex items-center gap-3 bg-emerald-50 px-5 py-2 rounded-3xl cursor-pointer hover:bg-emerald-100 transition-colors"
+                className="flex items-center gap-3 bg-slate-50 px-5 py-2 rounded-3xl cursor-pointer hover:bg-slate-100 transition-colors"
               >
-                <span className="text-emerald-700 font-semibold text-sm">Male</span>
-                <div className="relative w-11 h-6 bg-emerald-500 rounded-full">
+                <span className="text-slate-700 font-semibold text-sm">
+                  {isMaleVoice ? 'Male Voice' : 'Female Voice'}
+                </span>
+                <div className={cn(
+                  "relative w-11 h-6 rounded-full transition-colors duration-200",
+                  isMaleVoice ? "bg-blue-500" : "bg-pink-500"
+                )}>
                   <div
                     className={cn(
                       "absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-all duration-200",
@@ -326,9 +287,13 @@ export const WordDetailView = ({
             {/* Category */}
             <div className="px-8 pt-8 pb-4 text-center">
               <div className="inline-flex text-2xl font-medium">
-                <span className="text-blue-600">Other</span>
-                <span className="text-slate-300 mx-3">/</span>
-                <span className="text-red-600">Desire</span>
+                <span className="text-blue-600">{word?.category?.name || 'Category'}</span>
+                {word?.subcategory?.name && (
+                  <>
+                    <span className="text-slate-300 mx-3">/</span>
+                    <span className="text-red-600">{word.subcategory.name}</span>
+                  </>
+                )}
               </div>
             </div>
 
