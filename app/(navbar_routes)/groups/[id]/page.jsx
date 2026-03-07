@@ -1,32 +1,26 @@
-'use client'
+"use client";
 
-import React, { useCallback, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import React, { useCallback, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useUser } from "../../../../contexts/UserContext";
+import { useGetWordsByGroupsQuery } from "../../../../redux/slices/apiSlice";
+import { WordGrid } from "../../../../components/features/WordGrid";
+import { WordModal } from "../../../../components/features/WordModal";
 
-import { useUser } from '../../../../contexts/UserContext';
-
-import { useGetWordsByGroupsQuery } from '../../../../redux/slices/apiSlice';
-
-const IndividualGroup = ({params}) => {
-    const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
+const IndividualGroup = ({ params }) => {
+  const { isLearned, isFavorite, toggleLearned, toggleFavorite } = useUser();
   const [selectedWord, setSelectedWord] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [displayWords, setDisplayWords] = useState([]);
-  const [shouldLoadGrid, setShouldLoadGrid] = useState(false);
-    const searchParams = useSearchParams();
-  
-  const category = searchParams.get('category');
-  const subcategory = searchParams.get('subcategory');
-  //  groups: groupSlug,
-  //               subcategory: subcategorySlug
+  const searchParams = useSearchParams();
 
-  const {data,isLoading} = useGetWordsByGroupsQuery({groups:category,subcategory })
+  const category = searchParams.get("category");
+  const subcategory = searchParams.get("subcategory");
 
-
-
-
-    console.log(data,'hgyufgyt')
+  const { data, isLoading } = useGetWordsByGroupsQuery({
+    groups: category,
+    subcategory,
+  });
 
   const handleOpenModal = useCallback((word) => {
     setSelectedWord(word);
@@ -50,22 +44,57 @@ const IndividualGroup = ({params}) => {
     }
   };
 
-  console.log(displayWords,'this is asnd')
-
-  
-  if(isLoading){
-    return(
-     <div className ="flex h-screen justify-center items-center">
-       <p>Loading.....</p>
+  if (isLoading) {
+    return (
+      <div className="flex h-screen justify-center items-center bg-gradient-to-br from-rose-50 via-red-50 to-orange-50">
+        <div className="text-center space-y-4">
+          <p className="text-xl font-medium text-slate-600 animate-pulse">
+            Loading words...
+          </p>
+        </div>
       </div>
-    )
+    );
   }
-  
+
   return (
-    <div className="max-w-7xl mx-auto py-16 px-4">
-      <h1 className="text-2xl mb-24  md:text-3xl font-semibold text-center">
-        Select your word by your favorite group!
-      </h1>
+    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-red-50 to-orange-50 py-12">
+      <div className="max-w-7xl mx-auto px-4">
+        <header className="mb-12 text-center">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 capitalize">
+            {subcategory || category || "Group Words"}
+          </h1>
+          <p className="text-slate-600 max-w-2xl mx-auto">
+            Explore and learn words from the{" "}
+            <span className="text-red-500 font-semibold">{category}</span>{" "}
+            group.
+          </p>
+        </header>
+
+        <WordGrid
+          onOpenModal={handleOpenModal}
+          onWordsUpdate={setDisplayWords}
+          groupPageData={data}
+        />
+
+        <WordModal
+          word={selectedWord}
+          onNext={onNext}
+          onPrevious={onPrevious}
+          isOpen={isModalOpen}
+          isFavorite={
+            selectedWord ? isFavorite(String(selectedWord.id)) : false
+          }
+          onClose={handleCloseModal}
+          onToggleFavorite={toggleFavorite}
+          onToggleLearned={toggleLearned}
+          currentIndex={
+            selectedWord
+              ? displayWords.findIndex((w) => w.id === selectedWord.id)
+              : null
+          }
+          totalWords={displayWords.length}
+        />
+      </div>
     </div>
   );
 };

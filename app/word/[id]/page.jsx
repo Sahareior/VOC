@@ -79,7 +79,7 @@ export default function WordPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-6 py-4">
+      <div className="max-w-7xl mx-auto md:px-6 py-4">
         <button
           onClick={() => router.push('/')}
           className="flex items-center gap-2 text-slate-500 hover:text-slate-900 transition-colors mb-8 group"
