@@ -2,9 +2,12 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import AuthLayout from '../homepage-component/AuthLayout';
-import { Button } from '../../components/ui/Button';
-import { useResetPasswordMutation } from '../../redux/slices/apiSlice';
+
+
+
+import AuthLayout from '../../homepage-component/AuthLayout';
+import { useResetPasswordMutation } from '../../../redux/slices/apiSlice';
+import { Button } from '../../../components/ui/Button';
 
 export default function ResetPasswordPage() {
     const router = useRouter();

@@ -62,12 +62,13 @@ export function Header() {
   // Filter navigation based on login status
   const getNavigation = () => {
     const baseNav = [
-      { name: 'Quiz', href: '/quiz', icon: FileQuestion },
+      { name: 'Groups', href: '/groups', icon: BookDownIcon },
+     
     ];
 
     // Add Groups and Dashboard only if logged in
     if (isLoggedIn) {
-      baseNav.unshift({ name: 'Groups', href: '/groups', icon: BookDownIcon });
+      baseNav.unshift({ name: 'Quiz', href: '/quiz', icon: FileQuestion });
       baseNav.unshift({ name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard });
     }
 

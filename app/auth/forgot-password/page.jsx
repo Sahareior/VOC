@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import AuthLayout from '../homepage-component/AuthLayout';
-import { Button } from '../../components/ui/Button';
-import { useForgotPasswordMutation } from '../../redux/slices/apiSlice';
+
+
+
+import AuthLayout from '../../homepage-component/AuthLayout';
+import { useForgotPasswordMutation } from '../../../redux/slices/apiSlice';
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState('');
