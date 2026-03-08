@@ -2,19 +2,15 @@
 
 import React, { useCallback, memo, useState, useEffect, useRef } from 'react';
 import {
-  Volume2,
-  Heart,
-  CheckCircle,
-  Share2,
-  ChevronLeft,
-  ChevronRight,
-  BookOpen,
-  Sparkles,
-  Image as ImageIcon,
   X,
   Pause,
   RotateCcw,
-  Badge
+  Play,
+  ChevronLeft,
+  ChevronRight,
+  Image as ImageIcon,
+  Heart,
+  MoveRight,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Modal } from '../ui/Modal';
@@ -27,60 +23,49 @@ export const WordModal = memo(function WordModal({
   isFavorite,
   onClose,
   onToggleFavorite,
-  onToggleLearned,
+  allData = [],
   onNext,
   onPrevious,
+  onSelectWord,
   currentIndex,
   totalWords,
-  locationPath
+  locationPath,
 }) {
   const { speak } = useVoice();
   const [isSpeakingAll, setIsSpeakingAll] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [shouldAutoPlay, setShouldAutoPlay] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  // Use refs to track speech state
   const currentUtteranceRef = useRef(null);
   const speechTimeoutRef = useRef(null);
   const isMountedRef = useRef(false);
   const autoPlayInitiatedRef = useRef(false);
+  const sidebarRef = useRef(null);
 
-  // Clean up all speech synthesis
   const cleanupSpeech = useCallback(() => {
     if (speechTimeoutRef.current) {
       clearTimeout(speechTimeoutRef.current);
       speechTimeoutRef.current = null;
     }
-
     window.speechSynthesis.cancel();
-
     if (currentUtteranceRef.current) {
-      // Remove event listeners to prevent memory leaks
       const utterance = currentUtteranceRef.current;
       utterance.onend = null;
       utterance.onerror = null;
-      utterance.onpause = null;
-      utterance.onresume = null;
-      utterance.onstart = null;
       currentUtteranceRef.current = null;
     }
-
     if (isMountedRef.current) {
       setIsSpeakingAll(false);
       setIsPaused(false);
+      setProgress(0);
     }
   }, []);
 
-  // Handle pronunciation of all word parts
   const handlePronounceAll = useCallback(async () => {
     if (!word || !isMountedRef.current) return;
-
-    // Clean up any existing speech
     cleanupSpeech();
-
-    // Small delay to ensure cleanup is complete
-    await new Promise(resolve => setTimeout(resolve, 50));
-
+    await new Promise((resolve) => setTimeout(resolve, 50));
     if (!isMountedRef.current) return;
 
     setIsSpeakingAll(true);
@@ -88,35 +73,28 @@ export const WordModal = memo(function WordModal({
     autoPlayInitiatedRef.current = true;
 
     const parts = [];
-    if (word.name || word.term) {
-      parts.push(word.name || word.term || '');
-    }
-    if (word.definition) {
-      parts.push(word.definition);
-    }
+    if (word.name || word.term) parts.push(word.name || word.term);
+    if (word.definition) parts.push(word.definition);
     if (word.sentence) {
-      const firstSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
-      parts.push(`Example: ${firstSentence}`);
+      const sentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
+      parts.push(`Example: ${sentence}`);
     }
 
     let currentPartIndex = 0;
-    let isCancelled = false;
+    const totalParts = parts.length;
 
     const speakNextPart = () => {
-      // Check if cancelled or component unmounted
-      if (!isMountedRef.current || isCancelled || currentPartIndex >= parts.length) {
-        if (isMountedRef.current && !isCancelled) {
+      if (!isMountedRef.current || currentPartIndex >= totalParts) {
+        if (isMountedRef.current) {
           setIsSpeakingAll(false);
-          setIsPaused(false);
-
-          // Auto navigate to next word if available
+          setProgress(100);
           if (onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1) {
             speechTimeoutRef.current = setTimeout(() => {
               if (isMountedRef.current) {
                 setShouldAutoPlay(true);
                 onNext(currentIndex);
               }
-            }, 500);
+            }, 1000);
           }
         }
         return;
@@ -124,37 +102,20 @@ export const WordModal = memo(function WordModal({
 
       const utterance = new SpeechSynthesisUtterance(parts[currentPartIndex]);
       utterance.rate = 0.9;
-      utterance.pitch = 1;
-
+      utterance.onstart = () => setProgress(((currentPartIndex) / totalParts) * 100);
       utterance.onend = () => {
-        if (!isCancelled && isMountedRef.current) {
+        if (isMountedRef.current) {
           currentPartIndex++;
           speechTimeoutRef.current = setTimeout(speakNextPart, 800);
         }
       };
-
-      utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
-        if (isMountedRef.current && !isCancelled) {
-          setIsSpeakingAll(false);
-          setIsPaused(false);
-        }
-      };
-
       currentUtteranceRef.current = utterance;
       window.speechSynthesis.speak(utterance);
     };
 
     speakNextPart();
-
-    // Return cancellation function
-    return () => {
-      isCancelled = true;
-      cleanupSpeech();
-    };
   }, [word, cleanupSpeech, onNext, currentIndex, totalWords]);
 
-  // Handle pause/resume
   const handlePause = useCallback(() => {
     if (window.speechSynthesis.speaking && !isPaused) {
       window.speechSynthesis.pause();
@@ -165,388 +126,244 @@ export const WordModal = memo(function WordModal({
     }
   }, [isPaused]);
 
-  // Handle repeat
-  const handleRepeat = useCallback(() => {
-    cleanupSpeech();
-
-    speechTimeoutRef.current = setTimeout(() => {
-      if (isMountedRef.current) {
-        handlePronounceAll();
-      }
-    }, 100);
-  }, [handlePronounceAll, cleanupSpeech]);
-
-  // Handle close
   const handleClose = useCallback(() => {
     cleanupSpeech();
     onClose();
   }, [cleanupSpeech, onClose]);
 
-  // Handle favorite toggle
-  const handleToggleFavorite = useCallback(() => {
-    if (word?.id) {
-      const wordId = typeof word.id === 'number' ? word.id.toString() : word.id;
-      onToggleFavorite(wordId);
-    }
-  }, [word, onToggleFavorite]);
-
-  // Handle definition pronunciation
-  const handlePronounceDefinition = useCallback(() => {
-    if (word?.definition) {
-      speak(word.definition);
-    }
-  }, [word, speak]);
-
-  // Handle example pronunciation
-  const handlePronounceExample = useCallback(() => {
-    if (word?.sentence) {
-      const firstSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
-      speak(firstSentence);
-    }
-  }, [word, speak]);
-
-  // Auto-play for header location
-  useEffect(() => {
-    if (
-      locationPath === 'header' &&
-      isOpen &&
-      word &&
-      !isSpeakingAll &&
-      !autoPlayInitiatedRef.current
-    ) {
-      autoPlayInitiatedRef.current = true;
-      handlePronounceAll();
-    }
-  }, [locationPath, isOpen, word?.id, isSpeakingAll, handlePronounceAll]);
-
-  // Handle auto-play for navigation
-  useEffect(() => {
-    if (shouldAutoPlay && word && isMountedRef.current) {
-      cleanupSpeech();
-
-      speechTimeoutRef.current = setTimeout(() => {
-        if (isMountedRef.current) {
-          handlePronounceAll();
-          setShouldAutoPlay(false);
-        }
-      }, 300);
-    }
-  }, [word?.id, shouldAutoPlay, handlePronounceAll, cleanupSpeech]);
-
-  // Mount/unmount handling
   useEffect(() => {
     isMountedRef.current = true;
-    autoPlayInitiatedRef.current = false;
-
     return () => {
       isMountedRef.current = false;
       cleanupSpeech();
     };
   }, [cleanupSpeech]);
 
-  // Cleanup when modal closes
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      setShouldAutoPlay(true);
+    } else {
       cleanupSpeech();
+      setShouldAutoPlay(false);
       autoPlayInitiatedRef.current = false;
     }
   }, [isOpen, cleanupSpeech]);
 
-  // Cleanup on word change
   useEffect(() => {
-    return () => {
-      if (isMountedRef.current) {
-        cleanupSpeech();
+    if (shouldAutoPlay && word && isMountedRef.current) {
+      handlePronounceAll();
+      setShouldAutoPlay(false);
+    }
+  }, [word?.id, shouldAutoPlay, handlePronounceAll]);
+
+  // Auto-scroll sidebar to active item
+  useEffect(() => {
+    if (sidebarRef.current && currentIndex !== null) {
+      const activeEl = sidebarRef.current.querySelector('[data-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
       }
-    };
-  }, [word?.id, cleanupSpeech]);
+    }
+  }, [currentIndex]);
 
   if (!word) return null;
+
+  const displayWord = word.name || word.term;
+  const exampleSentence = Array.isArray(word.sentence) ? word.sentence[0] : word.sentence;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      size="lg"
-      closeOnOverlay
-      closeOnEscape
+      size="xl"
       className="overflow-hidden"
     >
-      <div className="flex w-full flex-col h-[80vh] overflow-hidden">
-        {/* Close button */}
-        <button
-          onClick={handleClose}
-          className="absolute top-4 right-4 z-50 p-2 rounded-lg bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm hover:bg-white dark:hover:bg-slate-800 transition-colors shadow-sm"
-          aria-label="Close modal"
-        >
-          <X className="w-5 h-5" />
-        </button>
+      <div className="flex flex-col  bg-white dark:bg-slate-900" style={{ height: '88vh', maxHeight: '700px' }}>
 
-        <div className="flex items-center justify-between px-3 p-1 pb-0">
-          <div className="flex items-center gap-4">
-            {currentIndex !== null && totalWords && (
-              <div className="flex items-center gap-2">
-                <BookOpen className="w-4 h-4 text-slate-400" />
-                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                  Word {currentIndex + 1} of {totalWords}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
+        {/* ── TOP BAR ── */}
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shrink-0">
+          {/* Audio controls */}
+          <div className="flex items-center gap-2 mx-auto">
             <button
-              onClick={handleToggleFavorite}
-              className={cn(
-                'p-2 rounded-lg transition-colors',
-                isFavorite
-                  ? 'text-rose-500 bg-rose-50 dark:bg-rose-900/30'
-                  : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-              )}
-              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              onClick={onPrevious ? () => { setShouldAutoPlay(true); onPrevious(currentIndex); } : undefined}
+              disabled={currentIndex === 0}
+              className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors"
             >
-              <Heart className={cn(
-                'w-5 h-5 transition-transform',
-                isFavorite && 'fill-current'
-              )} />
+              <ChevronLeft className="w-9 h-9 text-slate-500" />
             </button>
+
+            <button
+              onClick={isSpeakingAll ? handlePause : handlePronounceAll}
+              className="w-9 h-9 flex items-center justify-center bg-slate-800 dark:bg-white rounded-full text-white dark:text-slate-900 shadow hover:scale-105 transition-transform"
+            >
+              {isSpeakingAll && !isPaused
+                ? <Pause className="w-4 h-4 fill-current" />
+                : <Play className="w-4 h-4 fill-current" />}
+            </button>
+
+            <button
+              onClick={onNext ? () => { setShouldAutoPlay(true); onNext(currentIndex); } : undefined}
+              disabled={currentIndex === (totalWords || 0) - 1}
+              className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-30 transition-colors"
+            >
+              <ChevronRight className="w-9 h-9 text-slate-500" />
+            </button>
+
+            <button
+              onClick={() => { cleanupSpeech(); handlePronounceAll(); }}
+              className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400"
+            >
+              <RotateCcw className="w-7 h-7" />
+            </button>
+
+            <span className="text-xs text-slate-700 ml-1 tabular-nums">
+              {(currentIndex ?? 0) + 1} / {totalWords || allData.length}
+            </span>
           </div>
+
+
         </div>
 
-        <div className="flex-1 overflow-y-auto p-2 md:p-6">
-          <div className="md:max-w-2xl w-full mx-auto space-y-5">
-            <div className="relative">
-              <div className="flex items-start justify-between gap-6">
-                <div className="flex-1">
-                  <h1 className="text-2xl font-bold pb-5 bg-gradient-to-r from-slate-900 to-slate-700 dark:from-slate-100 dark:to-slate-300 bg-clip-text text-transparent">
-                    {word.name || word.term}
-                  </h1>
+        {/* ── BODY ── */}
+        <div className="flex flex-1 overflow-hidden">
 
-                  {word.phonetic && (
-                    <div className="flex items-center gap-2 mt-1">
-                      <Volume2 className="w-4 h-4 text-slate-400" />
-                      <span className="text-slate-500 dark:text-slate-400 font-medium">
-                        /{word.phonetic}/
+          {/* ── LEFT SIDEBAR: Word List ── */}
+          <div
+            ref={sidebarRef}
+            className="hidden md:flex pl-4 flex-col w-56 overflow-y-auto border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 word-list-scroll"
+          >
+            <ul className="py-3 mt-1 space-y-0.5">
+              {allData.map((item, idx) => {
+                const isActive = currentIndex === idx;
+                return (
+                  <li key={item.id ?? idx}>
+                    <button
+                      data-active={isActive}
+                      onClick={() => { setShouldAutoPlay(true); onSelectWord && onSelectWord(idx); }}
+                      className={cn(
+                        'w-full flex items-center gap-1 py-1 px-1 rounded-md text-left transition-all',
+                        isActive
+                          ? 'bg-slate-50 dark:bg-slate-800'
+                          : 'hover:bg-slate-50 dark:hover:bg-slate-800/60'
+                      )}
+                    >
+                      {/* Arrow / number */}
+                      <span className="w-8 flex items-center justify-center shrink-0">
+                        {isActive ? (
+                          <svg viewBox="0 0 20 14" className="w-4 h-3 text-purple-600 fill-current">
+                            <path d="M0 2 L10 2 L10 0 L20 7 L10 14 L10 12 L0 12 Z" />
+                          </svg>
+                        ) : (
+                          <svg viewBox="0 0 20 14" className="w-4 h-3 text-purple-300 dark:text-purple-700 fill-none stroke-current stroke-[1.5]">
+                            <path d="M0 2 L10 2 L10 0 L20 7 L10 14 L10 12 L0 12 Z" />
+                          </svg>
+                        )}
                       </span>
-                    </div>
-                  )}
+
+                      {/* Number */}
+                      <span className="text-[14px] mr-1 text-slate-400 w-4 text-right shrink-0 tabular-nums">
+                        {idx + 1}.
+                      </span>
+
+                      {/* Word */}
+                      <span
+                        className={cn(
+                          'font-bold text-[18px] lg:text-[20px] capitalize truncate',
+                          isActive
+                            ? 'text-[#E11D48]'
+                            : 'text-[#C0143C]/70 dark:text-rose-400/70'
+                        )}
+                      >
+                        {item.name || item.term}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* ── RIGHT: Word Card ── */}
+          <div className="flex-1 min-h-0 overflow-y-auto p-4 md:p-6 flex flex-col items-center justify-start bg-slate-50 dark:bg-slate-950 word-list-scroll">
+            <div className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl shadow-md border border-slate-100 dark:border-slate-800">
+
+              {/* Card top: badge + category */}
+              <div className="px-6 pt-6 pb-0">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="bg-[#0F172A] dark:bg-slate-700 text-white text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-widest">
+                    {word.type || 'Noun'}
+                  </span>
+                  <span className="text-lg font-semibold text-[#E11D48] uppercase tracking-wide">
+                    {word.category?.name || 'Bad'} / {word.subcategory?.name || 'Strange'}
+                  </span>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handlePronounceAll}
-                    className={cn(
-                      'relative p-3 rounded-xl transition-all duration-200',
-                      'bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30',
-                      'text-primary-600 dark:text-primary-400 hover:scale-105 active:scale-95',
-                      'shadow-sm hover:shadow-md',
-                      'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900',
-                      isSpeakingAll && 'ring-2 ring-primary-500'
-                    )}
-                    aria-label="Pronounce word, definition, and example"
-                    disabled={isSpeakingAll}
-                  >
-                    <Volume2 className={cn(
-                      "md:w-6 md:h-6 w-4 h-4",
-                      isSpeakingAll && "animate-pulse"
-                    )} />
-                    {isSpeakingAll && (
-                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary-500 rounded-full animate-ping" />
-                    )}
-                  </button>
+                {/* Word + definition */}
+                <p className="text-slate-800 dark:text-slate-200 leading-snug mb-2">
+                  <span className="font-extrabold text-[#E11D48] text-2xl mr-2">
+                    {displayWord}
+                  </span>
+                  <span className="text-slate-500 dark:text-slate-400 text-base">
+                    - {word.definition}
+                  </span>
+                </p>
 
-                  {isSpeakingAll && (
-                    <button
-                      onClick={handlePause}
-                      className={cn(
-                        'p-3 rounded-xl transition-all duration-200',
-                        'bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30',
-                        'text-amber-600 dark:text-amber-400 hover:scale-105 active:scale-95',
-                        'shadow-sm hover:shadow-md',
-                        'focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900',
-                        'animate-in slide-in-from-right-5 duration-300'
-                      )}
-                      aria-label={isPaused ? "Resume" : "Pause"}
-                    >
-                      <Pause className={cn(
-                        "md:w-6 md:h-6 w-4 h-4",
-                        isPaused && "fill-current"
-                      )} />
-                    </button>
-                  )}
+                {/* Red divider */}
+                <div className="h-px bg-[#E11D48]/20 my-4" />
 
-                  {isSpeakingAll && (
-                    <button
-                      onClick={handleRepeat}
-                      className={cn(
-                        'p-3 rounded-xl transition-all duration-200',
-                        'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30',
-                        'text-emerald-600 dark:text-emerald-400 hover:scale-105 active:scale-95',
-                        'shadow-sm hover:shadow-md',
-                        'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 dark:focus:ring-offset-slate-900',
-                        'animate-in slide-in-from-right-5 duration-300 delay-75'
-                      )}
-                      aria-label="Repeat from beginning"
-                    >
-                      <RotateCcw className="md:w-6 md:h-6 w-4 h-4" />
-                    </button>
+                {/* Example sentence */}
+                <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed mb-6">
+                  {exampleSentence
+                    ? highlightWord(exampleSentence, displayWord)
+                    : 'No example available.'}
+                </p>
+              </div>
+
+              {/* Image */}
+              <div className="px-3 pb-3">
+                <div className="relative w-full overflow-hidden rounded-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800"
+                  style={{ aspectRatio: '4/3' }}>
+                  {word.image ? (
+                    <Image
+                      src={word.image}
+                      alt={displayWord}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                      <ImageIcon className="w-10 h-10 text-slate-300" />
+                      <p className="text-slate-400 text-xs">No image available</p>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
 
-            {word.image && (
-              <div className="relative group aspect-video overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
-                <Image
-                  src={word.image}
-                  alt={word.name || word.term || 'Word illustration'}
-                  width={300}
-                  height={200}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  loading="lazy"
-                  onError={(e) => {
-                    const target = e.target;
-                    target.style.display = 'none';
-                    target.parentElement.innerHTML = `
-                      <div class="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-800">
-                        <div class="text-center">
-                          <div class="w-12 h-12 mx-auto mb-2 text-slate-400">${ImageIcon}</div>
-                          <p class="text-slate-500 dark:text-slate-400">Image not available</p>
-                        </div>
-                      </div>
-                    `;
-                  }}
-                />
 
-                <div className="absolute inset-0 flex items-center justify-between p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  {onPrevious && currentIndex !== null && currentIndex > 0 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        cleanupSpeech();
-                        setShouldAutoPlay(true);
-                        onPrevious(currentIndex);
-                      }}
-                      className="p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white dark:hover:bg-slate-800"
-                      aria-label="Previous word"
-                    >
-                      <ChevronLeft className="w-6 h-6 text-slate-600 dark:text-slate-300" />
-                    </button>
-                  )}
-
-                  {onNext && currentIndex !== null && currentIndex < (totalWords || 0) - 1 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        cleanupSpeech();
-                        setShouldAutoPlay(true);
-                        onNext(currentIndex);
-                      }}
-                      className="p-3 rounded-full bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-110 active:scale-95 hover:bg-white dark:hover:bg-slate-800 ml-auto"
-                      aria-label="Next word"
-                    >
-                      <ChevronRight className="w-6 h-6 text-slate-600 dark:text-slate-300" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {word.definition && (
-              <div className="group relative">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary-500 to-blue-500 rounded-2xl blur opacity-0 group-hover:opacity-20 transition duration-500" />
-                <div className="relative p-2 bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="p-2 bg-primary-100 dark:bg-primary-900/30 rounded-lg">
-                        <BookOpen className="w-3 h-3 text-primary-600 dark:text-primary-400" />
-                      </div>
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        Definition
-                      </h3>
-                    </div>
-                    <button
-                      onClick={handlePronounceDefinition}
-                      className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
-                      aria-label="Pronounce definition"
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <p className="text-slate-700 dark:text-slate-300 leading-relaxed text[16px]">
-                    {word.definition}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {word.sentence && (
-              <div className="group relative">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-2xl blur opacity-0 group-hover:opacity-20 transition duration-500" />
-                <div className="relative p-2 bg-gradient-to-br from-white to-emerald-50 dark:from-slate-800 dark:to-emerald-900/5 rounded-2xl border border-emerald-100 dark:border-emerald-800/30">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                        Example Usage
-                      </h3>
-                    </div>
-                    <button
-                      onClick={handlePronounceExample}
-                      className="p-2 md:px-6 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400"
-                      aria-label="Pronounce example"
-                    >
-                      <Volume2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <p className="text-slate-700 dark:text-slate-300 leading-relaxed text-[16px] italic">
-                      {Array.isArray(word.sentence) ? word.sentence[0] : word.sentence}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {(onPrevious || onNext) && !word.image && currentIndex !== null && (
-              <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700">
-                {onPrevious && currentIndex > 0 ? (
-                  <button
-                    onClick={() => {
-                      cleanupSpeech();
-                      setShouldAutoPlay(true);
-                      onPrevious(currentIndex);
-                    }}
-                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                    <span>Previous</span>
-                  </button>
-                ) : (
-                  <div />
-                )}
-                <div className="text-sm text-slate-500 dark:text-slate-400">
-                  {currentIndex !== null && totalWords ? `Word ${currentIndex + 1} of ${totalWords}` : 'Navigation'}
-                </div>
-                {onNext && currentIndex < (totalWords || 0) - 1 ? (
-                  <button
-                    onClick={() => {
-                      cleanupSpeech();
-                      setShouldAutoPlay(true);
-                      onNext(currentIndex);
-                    }}
-                    className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    <span>Next</span>
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                ) : (
-                  <div />
-                )}
-              </div>
-            )}
           </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .word-list-scroll::-webkit-scrollbar { width: 4px; }
+        .word-list-scroll::-webkit-scrollbar-track { background: transparent; }
+        .word-list-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .dark .word-list-scroll::-webkit-scrollbar-thumb { background: #1e293b; }
+      `}</style>
     </Modal>
   );
 });
+
+/* ── Helper: bold the target word in the example sentence ── */
+function highlightWord(sentence, word) {
+  if (!word) return sentence;
+  const regex = new RegExp(`(${word})`, 'gi');
+  const parts = sentence.split(regex);
+  return parts.map((part, i) =>
+    regex.test(part)
+      ? <strong key={i} className="font-bold text-slate-900 dark:text-slate-100">{part}</strong>
+      : part
+  );
+}

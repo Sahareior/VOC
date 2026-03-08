@@ -218,7 +218,7 @@ export function Header() {
                       : 'text-red-600 hover:bg-gray-50'
                       }`}
                   >
-                    Newest
+                    Similar 
                   </button>
                 </div>
               )}
@@ -454,6 +454,7 @@ export function Header() {
         onToggleLearned={toggleLearned}
         currentIndex={getCurrentIndex()}
         totalWords={allData ? allData.length : 0}
+          allData={allData}
       />
     </div>
   );

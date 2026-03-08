@@ -80,7 +80,9 @@ const IndividualGroup = ({ params }) => {
           word={selectedWord}
           onNext={onNext}
           onPrevious={onPrevious}
+          onSelectWord={(index) => setSelectedWord(displayWords[index])}
           isOpen={isModalOpen}
+          allData={displayWords}
           isFavorite={
             selectedWord ? isFavorite(String(selectedWord.id)) : false
           }

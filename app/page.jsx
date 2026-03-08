@@ -21,7 +21,7 @@ export default function HomePage() {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [displayWords, setDisplayWords] = useState([]);
   const [shouldLoadGrid, setShouldLoadGrid] = useState(false);
-    const { theme } = useTheme();
+  const { theme } = useTheme();
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -55,39 +55,41 @@ export default function HomePage() {
 
   return (
     <div>
- 
-         
-       
+
+
+
 
 
 
       <section className="max-w-7xl  mx-auto px-2 sm:px-4 lg:px-8 py-1">
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        
+
         </div>
 
 
-            <WordGrid 
-              onOpenModal={handleOpenModal} 
-              onWordsUpdate={setDisplayWords}
-            />
-        
+        <WordGrid
+          onOpenModal={handleOpenModal}
+          onWordsUpdate={setDisplayWords}
+        />
+
       </section>
 
 
-          <WordModal
-            word={selectedWord}
-            onNext={onNext}
-            onPrevious={onPrevious}
-            isOpen={isModalOpen}
-            isFavorite={selectedWord ? isFavorite(String(selectedWord.id)) : false}
-            onClose={handleCloseModal}
-            onToggleFavorite={toggleFavorite}
-            onToggleLearned={toggleLearned}
-            currentIndex={selectedWord ? displayWords.findIndex(w => w.id === selectedWord.id) : null}
-            totalWords={displayWords.length}
-          />
-        
+      <WordModal
+        word={selectedWord}
+        onNext={onNext}
+        onPrevious={onPrevious}
+        onSelectWord={(index) => setSelectedWord(displayWords[index])}
+        isOpen={isModalOpen}
+        allData={displayWords}
+        isFavorite={selectedWord ? isFavorite(String(selectedWord.id)) : false}
+        onClose={handleCloseModal}
+        onToggleFavorite={toggleFavorite}
+        onToggleLearned={toggleLearned}
+        currentIndex={selectedWord ? displayWords.findIndex(w => w.id === selectedWord.id) : null}
+        totalWords={displayWords.length}
+      />
+
     </div>
   );
 }
