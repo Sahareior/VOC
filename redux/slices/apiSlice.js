@@ -42,7 +42,7 @@ export const api = createApi({
 
     signUp: builder.mutation({
       query: (data) => ({
-        url: '/auth/register',
+        url: 'auth/register',
         method: 'POST',
         body: data,
       }),
@@ -51,7 +51,7 @@ export const api = createApi({
 
     signIn: builder.mutation({
       query: (data) => ({
-        url: '/auth/login',
+        url: 'auth/login',
         method: 'POST',
         body: data,
       }),
@@ -67,7 +67,7 @@ export const api = createApi({
 
     forgotPassword: builder.mutation({
       query: (data) => ({
-        url: '/auth/forgot-password',
+        url: 'auth/forgot-password',
         method: 'POST',
         body: data,
       }),
@@ -75,7 +75,7 @@ export const api = createApi({
 
     resetPassword: builder.mutation({
       query: (data) => ({
-        url: '/auth/reset-password',
+        url: 'auth/reset-password',
         method: 'POST',
         body: data,
       }),
@@ -91,7 +91,7 @@ export const api = createApi({
 
     postStats: builder.mutation({
       query: (data) => ({
-        url: '/stats/viewed',
+        url: 'stats/viewed',
         method: 'POST',
         body: data,
       }),
@@ -103,7 +103,7 @@ export const api = createApi({
 
     logout: builder.mutation({
       query: () => ({
-        url: '/auth/logout',
+        url: 'auth/logout',
         method: 'POST',
       }),
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
