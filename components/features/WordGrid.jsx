@@ -235,7 +235,7 @@ export function WordGrid({ onOpenModal, onWordsUpdate, groupPageData }) {
       {currentWords.length > 0 ? (
         <>
           {!isSearchMode && (
-            <div className="py-4">
+            <div className="py-1">
               <NavPagination
                 currentPage={currentPage}
                 totalPages={totalPages}

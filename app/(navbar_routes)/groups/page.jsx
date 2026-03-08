@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 // import { useTheme } from '@/contexts/ThemeContext';
 import { useRouter } from 'next/navigation';
-import { useGetGroupsQuery } from '../../../redux/slices/apiSlice';
+import { useGetGroupsQuery, usePostStatsMutation } from '../../../redux/slices/apiSlice';
 import { useTheme } from '../../../contexts/ThemeContext';
 // import { useGetGroupsQuery } from '@/redux/slices/apiSlice';
 
@@ -14,6 +14,7 @@ export default function Groups() {
   const { theme } = useTheme();
   const router = useRouter();
   const { data: groupsData, isLoading, error } = useGetGroupsQuery();
+  const [postStats] = usePostStatsMutation();
 
   useEffect(() => {
     if (groupsData && groupsData.length > 0) {
@@ -77,6 +78,11 @@ export default function Groups() {
       item: 'hover:bg-gray-750'
     }
   };
+
+
+  const handelPostStats = (id) => {
+    postStats({subcategory_id: id });
+  }
 
   const t = themeClasses[theme];
 
@@ -221,8 +227,11 @@ export default function Groups() {
                           className={`px-3 py-2 rounded ${t.item} transition-colors flex items-center justify-between`}
                         >
    <button 
-  onClick={() => router.push(`/groups/subcategory?category=${category.slug}&subcategory=${item.slug}`)} 
-  className="font-medium hover:underline"
+  onClick={() => {
+    handelPostStats(item.id);
+    router.push(`/groups/subcategory?category=${category.slug}&subcategory=${item.slug}`)} 
+  }
+    className="font-medium hover:underline"
 >
   {item.name}
 </button>

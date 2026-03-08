@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import AuthLayout from '../homepage-component/AuthLayout';
 import { Button } from '../../components/ui/Button';
-
+import { useSignUpMutation } from '../../redux/slices/apiSlice';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -15,7 +15,7 @@ export default function SignupPage() {
     password: '',
     confirmPassword: '',
   });
-  const [isLoading, setIsLoading] = useState(false);
+  const [signUp, { isLoading }] = useSignUpMutation();
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -45,34 +45,24 @@ export default function SignupPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
-    
-    setIsLoading(true);
+
     setError('');
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password,
-        }),
-      });
+      await signUp({
+        full_name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      }).unwrap();
 
-      if (!response.ok) {
-        throw new Error('Signup failed. Please try again.');
-      }
-
-      router.push('/dashboard');
+      router.push('/login');
     } catch (err) {
-      setError('Signup failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+      setError(err.data?.detail || 'Signup failed. Please try again.');
     }
   };
+
 
   return (
     <AuthLayout
@@ -234,7 +224,7 @@ export default function SignupPage() {
         <div className="text-center text-sm text-gray-600 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-800">
           Already have an account?{' '}
           <button
-            onClick={()=> router.push('/login')}
+            onClick={() => router.push('/login')}
             className="font-medium text-gray-900 hover:text-gray-700 dark:text-white dark:hover:text-gray-300"
           >
             Sign in

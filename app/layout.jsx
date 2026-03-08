@@ -31,10 +31,12 @@ export default function RootLayout({
             <VoiceProvider>
               <div className="flex flex-col min-h-screen">
                 <VoiceCommandHandler />
-                <Header />
-                <main className="flex-1">
-                  <ReduxProvider>{children}</ReduxProvider>
-                </main>
+                <ReduxProvider>
+                  <Header />
+                  <main className="flex-1">
+                    {children}
+                  </main>
+                </ReduxProvider>
                 {/* <VoiceCommand /> */}
                 <Footer />
               </div>
