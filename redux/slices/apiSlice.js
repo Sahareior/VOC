@@ -116,6 +116,18 @@ export const api = createApi({
       },
     }),
 
+    getProfile: builder.query({
+      query: () => '/user/profile',
+    }),
+
+    profileUpdate: builder.mutation({
+      query: (data) => ({
+        url: 'user/update',
+        method: 'PATCH',
+        body: data,
+      }),
+    }),
+
 
 
   }),
@@ -136,4 +148,6 @@ export const {
   useUpdatePasswordMutation,
   usePostStatsMutation,
   useGetStatsQuery,
+  useGetProfileQuery,
+  useProfileUpdateMutation,
 } = api;

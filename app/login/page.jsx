@@ -28,8 +28,10 @@ export default function LoginPage() {
     setError('');
 
     try {
-      await signIn(formData).unwrap();
-      router.push('/dashboard');
+     const res = await signIn(formData).unwrap();
+      if(res){
+        router.push('/');
+      }
     } catch (err) {
       if (err.status === 401) {
         setError('Invalid email or password');

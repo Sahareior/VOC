@@ -57,7 +57,7 @@ const IndividualGroup = ({ params }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-rose-50 via-red-50 to-orange-50 py-12">
+    <div className="min-h-screen pt-24 bg-gradient-to-br from-rose-50 via-red-50 to-orange-50 py-12">
       <div className="max-w-7xl mx-auto px-4">
         <header className="mb-12 text-center">
           <h1 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4 capitalize">

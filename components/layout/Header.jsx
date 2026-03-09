@@ -69,7 +69,7 @@ export function Header() {
     // Add Groups and Dashboard only if logged in
     if (isLoggedIn) {
       baseNav.unshift({ name: 'Quiz', href: '/quiz', icon: FileQuestion });
-      baseNav.unshift({ name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard });
+      // baseNav.unshift({ name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard });
     }
 
     return baseNav;
@@ -141,9 +141,9 @@ export function Header() {
   return (
     <div>
       {/* ================= HEADER ================= */}
-      <header className="sticky top-0 z-50 w-full bg-white shadow-lg border-b py-1 border-gray-200">
+      <header className="fixed top-0 z-50 w-full bg-white shadow-lg border-b py-2 border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6">
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex h-14 items-center justify-between">
 
             {/* LEFT SIDE */}
             <div className="flex items-center gap-4 sm:gap-8">
@@ -152,8 +152,8 @@ export function Header() {
                   src={logo}
                   alt="Logo"
                   width={140}
-                  height={44}
-                  className="sm:w-[190px] sm:h-[60px]"
+                  height={40}
+                  className="sm:w-[160px] sm:h-[45px]"
                   priority
                 />
               </Link>
