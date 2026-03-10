@@ -7,6 +7,8 @@ export const WordCard = ({ word }) => {
   const [isSentenceModalOpen, setIsSentenceModalOpen] = useState(false);
   const router = useRouter();
 
+  console .log(word,'this is words')
+
   const handleOpenSentences = (e) => {
     e.stopPropagation();
     setIsSentenceModalOpen(true);
@@ -29,19 +31,14 @@ export const WordCard = ({ word }) => {
             {word.type}
           </span>
 
-          {/* Center progress */}
-          <div className="text-sm">
-            <span className="text-red-600 font-semibold">
-              {word.order ?? 3}
-            </span>{' '}
-            <span className="text-gray-700">
-              of {word.total ?? 3213}
-            </span>
-          </div>
+
 
           {/* Category */}
-          <div className="text-red-600 text-xl font-bold">
-            {word.category?.name}
+          <div className="text-red-600 mt-6 flex gap-2 justify-center  text-xl font-bold">
+            <span className='text-red-600'>{word.category?.name}</span> 
+            
+            /
+            <span className='text-yellow-600'>{word?.subcategory?.name}</span>
           </div>
 
           {/* Sentences text */}

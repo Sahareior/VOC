@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useGetProfileQuery, useGetStatsQuery, usePostStatsMutation } from '../../../redux/slices/apiSlice';
+import { useGetGroupsQuery, useGetProfileQuery, useGetStatsQuery, usePostStatsMutation } from '../../../redux/slices/apiSlice';
 import { useTheme } from '../../../contexts/ThemeContext';
 
 export default function Groups() {
@@ -11,24 +11,40 @@ export default function Groups() {
   const [search, setSearch] = useState('');
   const { theme } = useTheme();
   const router = useRouter();
-  const { data: statsData, isLoading, error,refetch } = useGetStatsQuery();
+  const { data: statsData, isLoading: statsLoading, error: statsError, refetch } = useGetStatsQuery();
   const [postStats] = usePostStatsMutation();
-  const {data:profileData} = useGetProfileQuery();
+  const { data: profileData } = useGetProfileQuery();
+  const { data: groupsData, isLoading: groupsLoading, error: groupsError } = useGetGroupsQuery();
+
+  const isAuthenticated = !!profileData?.email;
+
+  // Use statsData for authenticated users, groupsData for guests
+  const displayData = isAuthenticated ? statsData : groupsData;
+  const isLoading = isAuthenticated ? statsLoading : groupsLoading;
+  const error = isAuthenticated ? statsError : groupsError;
+
+  // Helper: get the unique id from a subcategory (statsData uses subcategory_id, groupsData uses id)
+  const getSubId = (item) => item.subcategory_id ?? item.id;
+  // Helper: get the unique id from a category (statsData uses category_id, groupsData uses id)
+  const getCatId = (cat) => cat.category_id ?? cat.id;
+
+
+
 
   const isDark = theme === 'dark';
 
-  const handlePostStats = async(id) => {
-   const res = await postStats({ subcategory_id: id });
-   if(res.data){
-    refetch();
-   }
+  const handlePostStats = async (id) => {
+    const res = await postStats({ subcategory_id: id });
+    if (res.data) {
+      refetch();
+    }
   };
 
   /* ── derive display data ── */
   const activeCategory =
     selectedCategory === 'all'
-      ? { name: 'All', subcategories: statsData ? statsData.flatMap((c) => c.subcategories) : [] }
-      : statsData?.find((c) => c.slug === selectedCategory) || { name: '', subcategories: [] };
+      ? { name: 'All', subcategories: displayData ? displayData.flatMap((c) => c.subcategories) : [] }
+      : displayData?.find((c) => c.slug === selectedCategory) || { name: '', subcategories: [] };
 
   const visibleSubs = activeCategory.subcategories.filter((item) =>
     item.name.toLowerCase().includes(search.toLowerCase())
@@ -70,7 +86,7 @@ export default function Groups() {
     );
   }
 
-  if (!statsData || statsData.length === 0) {
+  if (!displayData || displayData.length === 0) {
     return (
       <div className={`min-h-screen ${bg} flex items-center justify-center`}>
         <p className={textMuted}>No vocabulary groups found.</p>
@@ -87,7 +103,7 @@ export default function Groups() {
 
   if (isAll) {
     // Show each top-level category as its own column (max 3)
-    columns = statsData.slice(0, 3).map((cat, i) => ({
+    columns = displayData.slice(0, 3).map((cat, i) => ({
       title: cat.name,
       total: cat.subcategories.reduce((sum, s) => sum + (s.total_words ?? 0), 0),
       color: HEADER_COLORS[i] || 'text-blue-600',
@@ -97,7 +113,7 @@ export default function Groups() {
     }));
   } else {
     // Single category → split its subs into 3 equal columns
-    const cat = statsData.find((c) => c.slug === selectedCategory);
+    const cat = displayData.find((c) => c.slug === selectedCategory);
     const subs = visibleSubs;
     const colSize = Math.ceil(subs.length / 3);
     columns = Array.from({ length: 3 }, (_, i) => ({
@@ -124,9 +140,9 @@ export default function Groups() {
             >
               All
             </button>
-            {statsData.map((cat) => (
+            {displayData.map((cat) => (
               <button
-                key={cat.category_id}
+                key={getCatId(cat)}
                 onClick={() => setSelectedCategory(cat.slug)}
                 className={`rounded-lg px-4 py-1.5 text-sm font-semibold transition-colors text-left ${selectedCategory === cat.slug ? activePill : inactivePill
                   }`}
@@ -165,18 +181,19 @@ export default function Groups() {
                         <span className={`text-xs font-semibold uppercase tracking-wide ${textMuted}`}>&nbsp;</span>
                       )}
                       {/* Views / Score sub-headers */}
-{
-  profileData?.email && (
+                      {
+                        profileData?.email && (
                           <div className={`flex justify-end border-t border-gray-200 pt-4  gap-4 mt-1`}>
-                        <span className={`text-[11.5px] font-semibold uppercase tracking-wide ${textMuted}`}>Views</span>
-                        <span className={`text-[11.5px] font-semibold uppercase tracking-wide ${textMuted}`}>Score</span>
-                      </div>
-  )
-}
+                            <span className={`text-[11.5px] font-semibold uppercase tracking-wide ${textMuted}`}>Views</span>
+                            <span className={`text-[11.5px] font-semibold uppercase tracking-wide ${textMuted}`}>Score</span>
+                          </div>
+                        )
+                      }
                     </div>
 
                     {/* Rows */}
                     {col.items.map((item) => {
+                      const subId = getSubId(item);
                       const scoreDisplay =
                         item.quiz_score !== null && item.quiz_score !== undefined
                           ? `${Math.round(item.quiz_score)}%`
@@ -186,16 +203,16 @@ export default function Groups() {
                       /* find parent category slug for routing */
                       const parentCat =
                         selectedCategory !== 'all'
-                          ? statsData.find((c) => c.slug === selectedCategory)
-                          : statsData.find((c) =>
-                            c.subcategories.some((s) => s.subcategory_id === item.subcategory_id)
+                          ? displayData.find((c) => c.slug === selectedCategory)
+                          : displayData.find((c) =>
+                            c.subcategories.some((s) => getSubId(s) === subId)
                           );
 
                       return (
                         <div
-                          key={item.subcategory_id}
+                          key={subId}
                           onClick={() => {
-                            handlePostStats(item.subcategory_id);
+                            if (isAuthenticated) handlePostStats(subId);
                             router.push(
                               `/groups/subcategory?category=${parentCat?.slug ?? ''}&subcategory=${item.slug}`
                             );
@@ -208,23 +225,20 @@ export default function Groups() {
                             {item.name}
                           </span>
 
-                          {/* Count (views) right-aligned in normal weight like image */}
-{
-  profileData?.email && (
-                              <div className="flex items-center gap-4 flex-shrink-0">
-                            <span className={`text-sm font-semibold text-right min-w-[28px] ${viewsDisplay > 0 ? 'text-red-500' : textMuted
-                              }`}>
-                              {viewsDisplay > 0 ? viewsDisplay : '—'}
-                            </span>
-                            <span className={`text-sm font-semibold text-right min-w-[42px] ${item.quiz_score !== null && item.quiz_score !== undefined
-                              ? isDark ? 'text-gray-200' : 'text-gray-700'
-                              : textMuted
-                              }`}>
-                              {scoreDisplay}
-                            </span>
-                          </div>
-  )
-}
+                          {/* Views / Score — only for authenticated users */}
+                          {isAuthenticated && (
+                            <div className="flex items-center gap-4 flex-shrink-0">
+                              <span className={`text-sm font-semibold text-right min-w-[28px] ${viewsDisplay > 0 ? 'text-red-500' : textMuted}`}>
+                                {viewsDisplay > 0 ? viewsDisplay : '—'}
+                              </span>
+                              <span className={`text-sm font-semibold text-right min-w-[42px] ${item.quiz_score !== null && item.quiz_score !== undefined
+                                ? isDark ? 'text-gray-200' : 'text-gray-700'
+                                : textMuted
+                                }`}>
+                                {scoreDisplay}
+                              </span>
+                            </div>
+                          )}
                         </div>
                       );
                     })}

@@ -67,7 +67,7 @@ function ChangePassword() {
     }
 
     return (
-        <div className="min-h-[80vh] flex items-center justify-center p-4 sm:p-6 lg:p-8">
+        <div className="min-h-[80vh] pt-20 flex items-center justify-center p-4 sm:p-6 lg:p-8">
             <Card className="w-full max-w-md shadow-xl border-slate-200 dark:border-slate-800">
                 <CardHeader className="text-center pb-2">
                     <div className="mx-auto w-12 h-12 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center mb-4">
